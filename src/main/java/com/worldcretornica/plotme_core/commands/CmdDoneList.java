@@ -1,10 +1,12 @@
 package com.worldcretornica.plotme_core.commands;
 
+import static com.worldcretornica.plotme_core.utils.Util.whitespace;
+
+import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
-import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.utils.MinecraftFontWidthCalculator;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -14,55 +16,47 @@ public class CmdDoneList extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(Player p, String[] args) {
-        if (plugin.cPerms(p, "PlotMe.admin.done")) {
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(p);
+    public boolean exec(IPlayer player, String[] args) {
+        if (plugin.getPlotMeCoreManager().isPlotWorld(player)) {
+            if (player.hasPermission(PermissionNames.ADMIN_DONE)) {
 
-            if (pmi == null) {
-                p.sendMessage(RED + C("MsgNotPlotWorld"));
-                return true;
-            } else {
-                int maxpage;
-                int pagesize = 8;
                 int page = 1;
 
                 if (args.length == 2) {
-                    try {
-                        page = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException ex) {
-                    }
+                    page = Integer.parseInt(args[1]);
                 }
 
-                maxpage = (int) Math.ceil((double) plugin.getSqlManager().getFinishedPlotCount(p.getWorld().getName()) / (double) pagesize);
+                int maxpage = (int) Math.ceil(plugin.getSqlManager().getFinishedPlotCount(player.getWorld().getName()) / 8F);
 
-                if (page < 0) {
+                if (page < 1) {
                     page = 1;
                 } else if (page > maxpage) {
                     page = maxpage;
                 }
 
-                List<Plot> finishedplots = plugin.getSqlManager().getDonePlots(p.getWorld().getName(), page, pagesize);
+                List<Plot> finishedplots = plugin.getSqlManager().getDonePlots(player.getWorld().getName(), page, 8);
 
-                if (finishedplots.size() == 0) {
-                    p.sendMessage(C("MsgNoPlotsFinished"));
+                if (finishedplots.isEmpty()) {
+                    player.sendMessage(C("MsgNoPlotsFinished"));
                 } else {
-                    p.sendMessage(C("MsgFinishedPlotsPage") + " " + page + "/" + maxpage);
+                    player.sendMessage(C("MsgFinishedPlotsPage") + " " + page + "/" + maxpage);
 
-                    for (int i = (page - 1) * pagesize; i < finishedplots.size() && i < (page * pagesize); i++) {
-                        Plot plot = finishedplots.get(i);
-
-                        String starttext = "  " + AQUA + plot.getId() + RESET + " -> " + plot.getOwner();
+                    for (Plot plot : finishedplots) {
+                        String starttext = "  §b" + plot.getId() + "§r -> " + plot.getOwner();
 
                         int textLength = MinecraftFontWidthCalculator.getStringWidth(starttext);
 
-                        String line = starttext + Util().whitespace(550 - textLength) + "@" + plot.getFinishedDate();
+                        String line = starttext + whitespace(550 - textLength) + "@" + plot.getFinishedDate();
 
-                        p.sendMessage(line);
+                        player.sendMessage(line);
                     }
                 }
+            } else {
+                player.sendMessage("§c" + C("MsgPermissionDenied"));
+                return false;
             }
         } else {
-            p.sendMessage(RED + C("MsgPermissionDenied"));
+            player.sendMessage("§c" + C("MsgNotPlotWorld"));
         }
         return true;
     }

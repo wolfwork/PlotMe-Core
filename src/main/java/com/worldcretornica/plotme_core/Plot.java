@@ -1,372 +1,258 @@
 package com.worldcretornica.plotme_core;
 
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.block.Biome;
-import org.bukkit.entity.Player;
+import com.worldcretornica.plotme_core.api.IBiome;
+import com.worldcretornica.plotme_core.api.IPlayer;
+import com.worldcretornica.plotme_core.api.IWorld;
 
 import java.sql.Date;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class Plot implements Comparable<Plot> {
 
     //TODO look into removing reference to plugin
-    private PlotMe_Core plugin = null;
+
+    private final PlotMe_Core plugin;
 
     private String owner;
     private UUID ownerId;
     private String world;
     private PlayerList allowed;
     private PlayerList denied;
-    private Biome biome;
+    private IBiome biome;
     private Date expireddate;
     private boolean finished;
-    private List<String[]> comments;
     private String id;
     private double customprice;
     private boolean forsale;
     private String finisheddate;
     private boolean protect;
-    private boolean auctionned;
+    private boolean auctioned;
     private String currentbidder;
     private double currentbid;
     private UUID currentbidderId;
-    private String auctionneddate;
-    private String plotName;
 
-    public Plot(PlotMe_Core instance) {
-        this.plugin = instance;
-        this.setOwner("");
-        this.setOwnerId(null);
-        this.setWorld("");
-        this.setId("");
-        this.allowed = new PlayerList();
-        this.denied = new PlayerList();
-        this.setBiome(Biome.PLAINS);
+    public Plot(PlotMe_Core plugin) {
+        this.plugin = plugin;
+        setOwner("");
+        setOwnerId(null);
+        setWorld("");
+        setId("");
+        allowed = new PlayerList();
+        denied = new PlayerList();
+        setBiome(this.plugin.getServerBridge().getBiome("PLAINS"));
 
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, 7);
-        java.util.Date utlDate = cal.getTime();
-        this.setExpiredDate(new java.sql.Date(utlDate.getTime()));
+        Calendar.getInstance().add(Calendar.DAY_OF_YEAR, 7);
+        java.util.Date utlDate = Calendar.getInstance().getTime();
+        setExpiredDate(new Date(utlDate.getTime()));
 
-        this.comments = new ArrayList<>();
-        this.setCustomPrice(0);
-        this.setForSale(false);
-        this.setFinishedDate("");
-        this.setProtect(false);
-        this.setAuctionned(false);
-        this.setCurrentBidder("");
-        this.setCurrentBidderId(null);
-        this.setCurrentBid(0);
+        setCustomPrice(0.0);
+        setForSale(false);
+        setFinishedDate(null);
+        setProtect(false);
+        setAuctioned(false);
+        setCurrentBidder(null);
+        setCurrentBidderId(null);
+        setCurrentBid(0.0);
     }
 
-    @Deprecated
-    public Plot(PlotMe_Core instance, String owner, World world, String plotid, int days) {
-        this.plugin = instance;
-        this.setOwner(owner);
-        this.setOwnerId(null);
-        this.setWorld(world.getName());
-        this.allowed = new PlayerList();
-        this.denied = new PlayerList();
-        this.setBiome(Biome.PLAINS);
-        this.setId(plotid);
+    public Plot(PlotMe_Core plugin, String owner, UUID uuid, IWorld world, String plotid, int days) {
+        this.plugin = plugin;
+        setOwner(owner);
+        setOwnerId(uuid);
+        setWorld(world.getName());
+        allowed = new PlayerList();
+        denied = new PlayerList();
+        setBiome(this.plugin.getServerBridge().getBiome("PLAINS"));
+        setId(plotid);
 
         if (days == 0) {
-            this.setExpiredDate(null);
+            setExpiredDate(null);
         } else {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DAY_OF_YEAR, days);
             java.util.Date utlDate = cal.getTime();
-            this.setExpiredDate(new java.sql.Date(utlDate.getTime()));
+            setExpiredDate(new Date(utlDate.getTime()));
         }
 
-        this.comments = new ArrayList<>();
-        this.setCustomPrice(0);
-        this.setForSale(false);
-        this.setFinishedDate("");
-        this.setProtect(false);
-        this.setAuctionned(false);
-        this.setCurrentBidder("");
-        this.setCurrentBidderId(null);
-        this.setCurrentBid(0);
+        setCustomPrice(0.0);
+        setForSale(false);
+        setFinishedDate(null);
+        setProtect(false);
+        setAuctioned(false);
+        setCurrentBidder(null);
+        setCurrentBidderId(null);
+        setCurrentBid(0.0);
     }
 
-    public Plot(PlotMe_Core instance, String owner, UUID uuid, World world, String plotid, int days) {
-        this.plugin = instance;
-        this.setOwner(owner);
-        this.setOwnerId(uuid);
-        this.setWorld(world.getName());
-        this.allowed = new PlayerList();
-        this.denied = new PlayerList();
-        this.setBiome(Biome.PLAINS);
-        this.setId(plotid);
-
-        if (days == 0) {
-            this.setExpiredDate(null);
-        } else {
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.DAY_OF_YEAR, days);
-            java.util.Date utlDate = cal.getTime();
-            this.setExpiredDate(new java.sql.Date(utlDate.getTime()));
-        }
-
-        this.comments = new ArrayList<>();
-        this.setCustomPrice(0);
-        this.setForSale(false);
-        this.setFinishedDate("");
-        this.setProtect(false);
-        this.setAuctionned(false);
-        this.setCurrentBidder("");
-        this.setCurrentBidderId(null);
-        this.setCurrentBid(0);
-    }
-
-    public Plot(PlotMe_Core instance, UUID uuid, World world, String plotid, int days) {
-        this.plugin = instance;
-        this.setOwnerId(uuid);
-        
-        Player p = Bukkit.getPlayer(uuid);
-        if (p != null) {
-            this.setOwner(p.getName());
-        } else {
-            this.setOwner("");
-        }
-        this.setWorld(world.getName());
-        this.allowed = new PlayerList();
-        this.denied = new PlayerList();
-        this.setBiome(Biome.PLAINS);
-        this.setId(plotid);
-
-        if (days == 0) {
-            this.setExpiredDate(null);
-        } else {
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.DAY_OF_YEAR, days);
-            java.util.Date utlDate = cal.getTime();
-            this.setExpiredDate(new java.sql.Date(utlDate.getTime()));
-        }
-
-        this.comments = new ArrayList<>();
-        this.setCustomPrice(0);
-        this.setForSale(false);
-        this.setFinishedDate("");
-        this.setProtect(false);
-        this.setAuctionned(false);
-        this.setCurrentBidder("");
-        this.setCurrentBidderId(null);
-        this.setCurrentBid(0);
-    }
-
-    @Deprecated
-    public Plot(PlotMe_Core instance, String owner, String world, String bio, Date exp, boolean fini, PlayerList al,
-                List<String[]> comm, String tid, double custprice, boolean sale, String finishdt, boolean prot, String bidder,
-                Double bid, boolean isauctionned, PlayerList den, String auctdate) {
-        this.plugin = instance;
-        this.setOwner(owner);
-        this.setOwnerId(null);
-        this.setWorld(world);
-        this.setBiome(Biome.valueOf(bio));
-        this.setExpiredDate(exp);
-        this.setFinished(fini);
-        this.allowed = al;
-        this.comments = comm;
-        this.setId(tid);
-        this.setCustomPrice(custprice);
-        this.setForSale(sale);
-        this.setFinishedDate(finishdt);
-        this.setProtect(prot);
-        this.setAuctionned(isauctionned);
-        this.setCurrentBidder(bidder);
-        this.setCurrentBidderId(null);
-        this.setCurrentBid(bid);
-        this.denied = den;
-        this.setAuctionnedDate(auctdate);
-    }
-
-    public Plot(PlotMe_Core instance, String owner, UUID ownerId, String world, String bio, Date exp, boolean fini,
-                PlayerList al, List<String[]> comm, String tid, double custprice, boolean sale, String finishdt,
-                boolean prot, String bidder, UUID bidderId, Double bid, boolean isauctionned, PlayerList den, String auctdate, String plotname) {
-        this.plugin = instance;
-        this.setOwner(owner);
-        this.setOwnerId(ownerId);
-        this.setWorld(world);
-        this.setBiome(Biome.valueOf(bio));
-        this.setExpiredDate(exp);
-        this.setFinished(fini);
-        this.allowed = al;
-        this.comments = comm;
-        this.setId(tid);
-        this.setCustomPrice(custprice);
-        this.setForSale(sale);
-        this.setFinishedDate(finishdt);
-        this.setProtect(prot);
-        this.setAuctionned(isauctionned);
-        this.setCurrentBidder(bidder);
-        this.setCurrentBidderId(bidderId);
-        this.setCurrentBid(bid);
-        this.denied = den;
-        this.setAuctionnedDate(auctdate);
-        this.setPlotName(plotname);
-    }
-
-    public void setExpire(Date date) {
-        if (!this.getExpiredDate().equals(date)) {
-            this.setExpiredDate(date);
-            updateField("expireddate", this.getExpiredDate());
-        }
+    public Plot(PlotMe_Core plugin, String owner, UUID ownerId, String world, String biome, Date expiredDate,
+                boolean finished,
+                PlayerList allowed, String id, double customPrice, boolean sale, String finishedDate,
+                boolean protect, String bidder, UUID bidderId, double bid, boolean isAuctioned, PlayerList denied) {
+        this.plugin = plugin;
+        setOwner(owner);
+        setOwnerId(ownerId);
+        setWorld(world);
+        setBiome(this.plugin.getServerBridge().getBiome(biome));
+        setExpiredDate(expiredDate);
+        setFinished(finished);
+        this.allowed = allowed;
+        setId(id);
+        setCustomPrice(customPrice);
+        setForSale(sale);
+        setFinishedDate(finishedDate);
+        setProtect(protect);
+        setAuctioned(isAuctioned);
+        setCurrentBidder(bidder);
+        setCurrentBidderId(bidderId);
+        setCurrentBid(bid);
+        this.denied = denied;
     }
 
     public void resetExpire(int days) {
         if (days == 0) {
-            if (this.getExpiredDate() != null) {
-                this.setExpiredDate(null);
-                updateField("expireddate", this.getExpiredDate());
+            if (getExpiredDate() != null) {
+                setExpiredDate(null);
+                updateField("expireddate", getExpiredDate());
             }
         } else {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DAY_OF_YEAR, days);
             java.util.Date utlDate = cal.getTime();
-            java.sql.Date temp = new java.sql.Date(utlDate.getTime());
-            if (this.getExpiredDate() == null || !temp.toString().equalsIgnoreCase(this.getExpiredDate().toString())) {
-                this.setExpiredDate(temp);
-                updateField("expireddate", this.getExpiredDate());
+            Date temp = new Date(utlDate.getTime());
+            if (getExpiredDate() == null || !temp.toString().equalsIgnoreCase(getExpiredDate().toString())) {
+                setExpiredDate(temp);
+                updateField("expireddate", getExpiredDate());
             }
         }
     }
 
-    public String getExpire() {
-        return DateFormat.getDateInstance().format(this.getExpiredDate());
-    }
-
     public void setFinished() {
-        this.setFinishedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm").format(Calendar.getInstance().getTime()));
-        this.finished = true;
+        setFinishedDate(new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()));
+        setFinished(true);
 
-        updateFinished(this.getFinishedDate(), true);
+        updateFinished(getFinishedDate(), true);
     }
 
     public void setUnfinished() {
-        this.setFinishedDate("");
-        this.setFinished(false);
+        setFinishedDate(null);
+        setFinished(false);
 
-        updateFinished(this.getFinishedDate(), this.isFinished());
+        updateFinished(getFinishedDate(), isFinished());
     }
 
-    public Biome getBiome() {
-        return this.biome;
+    public IBiome getBiome() {
+        return biome;
+    }
+
+    public final void setBiome(IBiome biome) {
+        this.biome = biome;
     }
 
     public final String getOwner() {
-        return this.owner;
-    }
-    
-    public final UUID getOwnerId() {
-        return this.ownerId;
+        return owner;
     }
 
     public final void setOwner(String owner) {
         this.owner = owner;
     }
-    
+
+    public final UUID getOwnerId() {
+        return ownerId;
+    }
+
     public final void setOwnerId(UUID uuid) {
-        this.ownerId = uuid;
+        ownerId = uuid;
     }
 
     public String getAllowed() {
-        return allowed.getPlayerList();
+        return allowed().getPlayerList();
     }
 
     public String getDenied() {
-        return denied.getPlayerList();
+        return denied().getPlayerList();
     }
 
-    public int getCommentsCount() {
-        return this.comments.size();
-    }
-
-    public String[] getComment(int i) {
-        return this.comments.get(i);
-    }
-
-    public List<String[]> getComments() {
-        return this.comments;
-    }
-
-    public void addComment(String[] comment) {
-        this.comments.add(comment);
+    public void addAllowed(String name, UUID uuid) {
+        if (!isAllowedConsulting(name)) {
+            allowed().put(name, uuid);
+            plugin.getSqlManager().addPlotAllowed(name, uuid, PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld());
+        }
     }
 
     public void addAllowed(String name) {
         if (!isAllowedConsulting(name)) {
-            allowed.put(name);
-            plugin.getSqlManager().addPlotAllowed(name, null, plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), world);
+            allowed().put(name);
+            plugin.getSqlManager().addPlotAllowed(name, null, PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld());
         }
     }
 
     public void addAllowed(UUID uuid) {
         if (!isAllowed(uuid)) {
-            String name = allowed.put(uuid);
-            plugin.getSqlManager().addPlotAllowed(name, uuid, plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), world);
+            String name = allowed().put(uuid);
+            plugin.getSqlManager().addPlotAllowed(name, uuid, PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld());
         }
     }
 
     public void addDenied(String name) {
         if (!isDeniedConsulting(name)) {
-            denied.put(name);
-            plugin.getSqlManager().addPlotDenied(name, null, plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), world);
+            denied().put(name);
+            plugin.getSqlManager().addPlotDenied(name, null, PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld());
         }
     }
 
     public void addDenied(UUID uuid) {
         if (!isDenied(uuid)) {
-            String name = denied.put(uuid);
-            plugin.getSqlManager().addPlotDenied(name, uuid, plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), world);
+            String name = denied().put(uuid);
+            plugin.getSqlManager().addPlotDenied(name, uuid, PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld());
         }
     }
 
     public void removeAllowed(String name) {
-        if (allowed.contains(name)) {
-            UUID uuid = allowed.remove(name);
-            plugin.getSqlManager().deletePlotAllowed(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, uuid, world);
-            
-            if(plugin.getPlotWorldEdit() != null) {
-                Player p = Bukkit.getPlayer(uuid);
-                
-                if(p != null) {
-                    if(plugin.getPlotMeCoreManager().isPlotWorld(p.getWorld())) {
-                        if(!plugin.getPlotMeCoreManager().isPlayerIgnoringWELimit(p.getUniqueId()))
-                            plugin.getPlotWorldEdit().setMask(p);
-                        else
-                            plugin.getPlotWorldEdit().removeMask(p);
+        if (allowed().contains(name)) {
+            UUID uuid = allowed().remove(name);
+            plugin.getSqlManager().deletePlotAllowed(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, uuid, getWorld());
+
+            if (plugin.getServerBridge().getPlotWorldEdit() != null) {
+                IPlayer player = plugin.getServerBridge().getPlayer(uuid);
+
+                if (player != null) {
+                    if (plugin.getPlotMeCoreManager().isPlotWorld(player.getWorld())) {
+                        if (plugin.getPlotMeCoreManager().isPlayerIgnoringWELimit(player)) {
+                            plugin.getServerBridge().getPlotWorldEdit().removeMask(player);
+                        } else {
+                            plugin.getServerBridge().getPlotWorldEdit().setMask(player);
+                        }
                     }
                 }
             }
         }
     }
-    
+
     public void removeAllowedGroup(String name) {
-        if (allowed.contains(name)) {
-            allowed.remove(name);
-            plugin.getSqlManager().deletePlotAllowed(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, null, world);
+        if (allowed().contains(name)) {
+            allowed().remove(name);
+            plugin.getSqlManager().deletePlotAllowed(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, null, getWorld());
         }
     }
 
     public void removeAllowed(UUID uuid) {
-        if (allowed.contains(uuid)) {
-            String name = allowed.remove(uuid);
-            plugin.getSqlManager().deletePlotAllowed(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, uuid, world);
-            
-            if(plugin.getPlotWorldEdit() != null) {
-                Player p = Bukkit.getPlayer(uuid);
-                
-                if(p != null) {
-                    if(plugin.getPlotMeCoreManager().isPlotWorld(p.getWorld())) {
-                        if(!plugin.getPlotMeCoreManager().isPlayerIgnoringWELimit(p.getUniqueId()))
-                            plugin.getPlotWorldEdit().setMask(p);
-                        else
-                            plugin.getPlotWorldEdit().removeMask(p);
+        if (allowed().contains(uuid)) {
+            String name = allowed().remove(uuid);
+            plugin.getSqlManager().deletePlotAllowed(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, uuid, getWorld());
+
+            if (plugin.getServerBridge().getPlotWorldEdit() != null) {
+                IPlayer player = plugin.getServerBridge().getPlayer(uuid);
+
+                if (player != null) {
+                    if (plugin.getPlotMeCoreManager().isPlotWorld(player.getWorld())) {
+                        if (plugin.getPlotMeCoreManager().isPlayerIgnoringWELimit(player)) {
+                            plugin.getServerBridge().getPlotWorldEdit().removeMask(player);
+                        } else {
+                            plugin.getServerBridge().getPlotWorldEdit().setMask(player);
+                        }
                     }
                 }
             }
@@ -374,150 +260,142 @@ public class Plot implements Comparable<Plot> {
     }
 
     public void removeDenied(String name) {
-        if (denied.contains(name)) {
-            UUID uuid = denied.remove(name);
-            plugin.getSqlManager().deletePlotDenied(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, uuid, world);
+        if (denied().contains(name)) {
+            UUID uuid = denied().remove(name);
+            plugin.getSqlManager().deletePlotDenied(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, uuid, getWorld());
         }
     }
-    
+
     public void removeDeniedGroup(String name) {
-        if (denied.contains(name)) {
-            denied.remove(name);
-            plugin.getSqlManager().deletePlotDenied(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, null, world);
+        if (denied().contains(name)) {
+            denied().remove(name);
+            plugin.getSqlManager().deletePlotDenied(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, null, getWorld());
         }
     }
 
     public void removeDenied(UUID uuid) {
-        if (denied.contains(uuid)) {
-            String name = denied.remove(uuid);
-            plugin.getSqlManager().deletePlotDenied(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), name, uuid, world);
+        if (denied().contains(uuid)) {
+            String name = denied().remove(uuid);
+            plugin.getSqlManager().deletePlotDenied(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), name, uuid, getWorld());
         }
     }
 
     public void removeAllAllowed() {
-        HashMap<String, UUID> list = allowed.getAllPlayers();
+        HashMap<String, UUID> list = allowed().getAllPlayers();
         for (String n : list.keySet()) {
             UUID uuid = list.get(n);
-            plugin.getSqlManager().deletePlotAllowed(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), n, uuid, world);
+            plugin.getSqlManager().deletePlotAllowed(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), n, uuid, getWorld());
         }
-        allowed.clear();
+        allowed().clear();
     }
 
     public void removeAllDenied() {
-        HashMap<String, UUID> list = denied.getAllPlayers();
+        HashMap<String, UUID> list = denied().getAllPlayers();
         for (String n : list.keySet()) {
             UUID uuid = list.get(n);
-            plugin.getSqlManager().deletePlotDenied(plugin.getPlotMeCoreManager().getIdX(id), plugin.getPlotMeCoreManager().getIdZ(id), n, uuid, world);
+            plugin.getSqlManager().deletePlotDenied(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), n, uuid, getWorld());
         }
-        denied.clear();
+        denied().clear();
     }
 
     public boolean isAllowedConsulting(String name) {
-        @SuppressWarnings("deprecation")
-        Player p = Bukkit.getServer().getPlayerExact(name);
-        if(p != null) {
-            return isAllowedInternal(name, p.getUniqueId(), true, true);
+        IPlayer player = plugin.getServerBridge().getPlayerExact(name);
+        if (player != null) {
+            return isAllowedInternal(name, player.getUniqueId(), true, true);
         } else {
-            return isAllowedInternal(name, null, true, true);
+            return isGroupAllowed(name);
         }
     }
-    
+
     public boolean isGroupAllowed(String name) {
         return isAllowedInternal(name, null, true, true);
     }
-    
+
     public boolean isAllowed(String name, UUID uuid) {
         return isAllowedInternal(name, uuid, true, true);
     }
-    
+
     public boolean isAllowed(UUID uuid) {
         return isAllowedInternal("", uuid, true, true);
     }
 
     private boolean isAllowedInternal(String name, UUID uuid, boolean IncludeStar, boolean IncludeGroup) {
-                
-        if(IncludeStar && owner.equals("*")) {
-            return true;
-        }
-        
-        Player p = null;
 
-        if (uuid != null) {
-            p = Bukkit.getServer().getPlayer(uuid);
-        }
-
-        if (uuid != null && ownerId != null && ownerId.equals(uuid) || uuid == null && owner.equalsIgnoreCase(name)) {
+        if (IncludeStar && "*".equals(getOwner())) {
             return true;
         }
 
-        if (IncludeGroup && owner.toLowerCase().startsWith("group:") && p != null) {
-            if (p.hasPermission("plotme.group." + owner.replace("Group:", ""))) {
+        IPlayer player = plugin.getServerBridge().getPlayer(uuid);
+        if (getOwnerId() != null && getOwnerId().equals(uuid)) {
+            return true;
+        }
+
+        if (IncludeGroup && getOwner().toLowerCase().startsWith("group:") && player != null) {
+            if (player.hasPermission("plotme.group." + getOwner().replace("Group:", ""))) {
                 return true;
             }
         }
 
-        HashMap<String, UUID> list = allowed.getAllPlayers();
+        HashMap<String, UUID> list = allowed().getAllPlayers();
         for (String str : list.keySet()) {
-            if(IncludeStar && str.equals("*")) {
-                return true;
-            }
-            
-            UUID u = list.get(str);
-            if (u != null && uuid != null && u.equals(uuid) || uuid == null && str.equalsIgnoreCase(name)) {
+            if (IncludeStar && "*".equals(str)) {
                 return true;
             }
 
-            if (IncludeGroup && str.toLowerCase().startsWith("group:") && p != null)
-                if (p.hasPermission("plotme.group." + str.replace("Group:", "")))
+            UUID u = list.get(str);
+            if (u != null && u.equals(uuid) || uuid == null && str.equalsIgnoreCase(name)) {
+                return true;
+            }
+            if (IncludeGroup && str.toLowerCase().startsWith("group:") && player != null) {
+                if (player.hasPermission("plotme.group." + str.replace("Group:", ""))) {
                     return true;
+                }
+            }
         }
         return false;
     }
 
     public boolean isDeniedConsulting(String name) {
-        @SuppressWarnings("deprecation")
-        Player p = Bukkit.getServer().getPlayerExact(name);
-        if(p != null) {
-            return isDeniedInternal(name, p.getUniqueId(), true);
+        IPlayer player = plugin.getServerBridge().getPlayerExact(name);
+        if (player != null) {
+            return isDeniedInternal(name, player.getUniqueId());
         } else {
-            return isDeniedInternal(name, null, true);
+            return isGroupDenied(name);
         }
     }
-    
+
     public boolean isGroupDenied(String name) {
-        return isDeniedInternal(name, null, true);
+        return isDeniedInternal(name, null);
     }
 
     public boolean isDenied(UUID uuid) {
-        return isDeniedInternal("", uuid, true);
+        return isDeniedInternal("", uuid);
     }
 
-    private boolean isDeniedInternal(String name, UUID uuid, boolean IncludeGroup) {
-        Player p = null;
-        
-        if (isAllowedInternal(name, uuid, false, false))
+    public boolean isDeniedInternal(String name, UUID uuid) {
+
+        if (isAllowedInternal(name, uuid, false, false)) {
             return false;
-        
+        }
+
+        IPlayer player = null;
         if (uuid != null) {
-            p = Bukkit.getServer().getPlayer(uuid);
+            player = plugin.getServerBridge().getPlayer(uuid);
         }
-        
-        HashMap<String, UUID> list = denied.getAllPlayers();
+
+        HashMap<String, UUID> list = denied().getAllPlayers();
         for (String str : list.keySet()) {
-            if(str.equals("*")) {
+            if ("*".equals(str)) {
                 return true;
             }
-            
+
             UUID u = list.get(str);
-            if (u != null && uuid != null && u.equals(uuid) || uuid == null && str.equalsIgnoreCase(name)) {
+            if (str.equalsIgnoreCase(name) || uuid != null && (u != null && u.equals(uuid)
+                                                               || str.toLowerCase().startsWith("group:") && player != null && player
+                    .hasPermission("plotme.group." + str.replace("Group:", "")))) {
                 return true;
             }
-
-            if (IncludeGroup && str.toLowerCase().startsWith("group:") && p != null)
-                if (p.hasPermission("plotme.group." + str.replace("Group:", "")))
-                    return true;
         }
-
         return false;
     }
 
@@ -530,19 +408,19 @@ public class Plot implements Comparable<Plot> {
     }
 
     public int allowedcount() {
-        return allowed.size();
+        return allowed().size();
     }
 
     public int deniedcount() {
-        return denied.size();
+        return denied().size();
     }
 
     @Override
     public int compareTo(Plot plot) {
-        if (this.getExpiredDate().compareTo(plot.getExpiredDate()) == 0) {
-            return this.owner.compareTo(plot.owner);
+        if (getExpiredDate().equals(plot.getExpiredDate())) {
+            return getOwner().compareTo(plot.getOwner());
         } else {
-            return this.getExpiredDate().compareTo(plot.getExpiredDate());
+            return getExpiredDate().compareTo(plot.getExpiredDate());
         }
     }
 
@@ -552,7 +430,7 @@ public class Plot implements Comparable<Plot> {
     }
 
     public void updateField(String field, Object value) {
-        plugin.getSqlManager().updatePlot(plugin.getPlotMeCoreManager().getIdX(getId()), plugin.getPlotMeCoreManager().getIdZ(getId()), getWorld(), field, value);
+        plugin.getSqlManager().updatePlot(PlotMeCoreManager.getIdX(getId()), PlotMeCoreManager.getIdZ(getId()), getWorld(), field, value);
     }
 
     public final String getWorld() {
@@ -560,11 +438,7 @@ public class Plot implements Comparable<Plot> {
     }
 
     public final void setWorld(String world) {
-        this.world = world;
-    }
-
-    public final void setBiome(Biome biome) {
-        this.biome = biome;
+        this.world = world.toLowerCase();
     }
 
     public final Date getExpiredDate() {
@@ -623,28 +497,28 @@ public class Plot implements Comparable<Plot> {
         this.protect = protect;
     }
 
-    public final boolean isAuctionned() {
-        return auctionned;
+    public final boolean isAuctioned() {
+        return auctioned;
     }
 
-    public final void setAuctionned(boolean auctionned) {
-        this.auctionned = auctionned;
+    public final void setAuctioned(boolean auctioned) {
+        this.auctioned = auctioned;
     }
 
     public final String getCurrentBidder() {
         return currentbidder;
     }
-    
-    public final UUID getCurrentBidderId() {
-        return currentbidderId;
-    }
 
     public final void setCurrentBidder(String currentbidder) {
         this.currentbidder = currentbidder;
     }
-    
+
+    public final UUID getCurrentBidderId() {
+        return currentbidderId;
+    }
+
     public final void setCurrentBidderId(UUID uuid) {
-        this.currentbidderId = uuid;
+        currentbidderId = uuid;
     }
 
     public final double getCurrentBid() {
@@ -653,21 +527,5 @@ public class Plot implements Comparable<Plot> {
 
     public final void setCurrentBid(double currentbid) {
         this.currentbid = currentbid;
-    }
-
-    public final String getAuctionnedDate() {
-        return auctionneddate;
-    }
-
-    public final void setAuctionnedDate(String auctionneddate) {
-        this.auctionneddate = auctionneddate;
-    }
-
-    public String getPlotName() {
-        return plotName;
-    }
-
-    public void setPlotName(String plotName) {
-        this.plotName = plotName;
     }
 }

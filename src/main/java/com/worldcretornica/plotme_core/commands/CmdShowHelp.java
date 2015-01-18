@@ -1,365 +1,325 @@
 package com.worldcretornica.plotme_core.commands;
 
+import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
+import com.worldcretornica.plotme_core.api.IPlayer;
+import com.worldcretornica.plotme_core.api.IWorld;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("SameReturnValue")
 public class CmdShowHelp extends PlotCommand {
 
     public CmdShowHelp(PlotMe_Core instance) {
         super(instance);
     }
 
-    public boolean exec(Player p, int page) {
-        int max = 4;
-        int maxpage;
-        boolean ecoon = plugin.getPlotMeCoreManager().isEconomyEnabled(p);
+    public boolean exec(IPlayer player, int page) {
 
         List<String> allowed_commands = new ArrayList<>();
 
         allowed_commands.add("limit");
-        if (plugin.cPerms(p, "PlotMe.use.claim")) {
+        if (player.hasPermission(PermissionNames.USER_CLAIM)) {
             allowed_commands.add("claim");
         }
-        if (plugin.cPerms(p, "PlotMe.use.claim.other")) {
+        if (player.hasPermission("PlotMe.use.claim.other")) {
             allowed_commands.add("claim.other");
         }
-        if (plugin.cPerms(p, "PlotMe.use.auto")) {
+        if (player.hasPermission(PermissionNames.USER_AUTO)) {
             allowed_commands.add("auto");
         }
-        if (plugin.cPerms(p, "PlotMe.use.home")) {
+        if (player.hasPermission(PermissionNames.USE_HOME)) {
             allowed_commands.add("home");
         }
-        if (plugin.cPerms(p, "PlotMe.use.home.other")) {
+        if (player.hasPermission("PlotMe.use.home.other")) {
             allowed_commands.add("home.other");
         }
-        if (plugin.cPerms(p, "PlotMe.use.info")) {
+        if (player.hasPermission(PermissionNames.USER_INFO)) {
             allowed_commands.add("info");
             allowed_commands.add("biomeinfo");
         }
-        if (plugin.cPerms(p, "PlotMe.use.comment")) {
-            allowed_commands.add("comment");
-        }
-        if (plugin.cPerms(p, "PlotMe.use.comments")) {
-            allowed_commands.add("comments");
-        }
-        if (plugin.cPerms(p, "PlotMe.use.list")) {
+        if (player.hasPermission(PermissionNames.USER_LIST)) {
             allowed_commands.add("list");
         }
-        if (plugin.cPerms(p, "PlotMe.use.biome")) {
+        if (player.hasPermission(PermissionNames.USER_BIOME)) {
             allowed_commands.add("biome");
-            allowed_commands.add("biomelist");
+            allowed_commands.add("biomes");
         }
-        if (plugin.cPerms(p, "PlotMe.use.done") || plugin.cPerms(p, "PlotMe.admin.done")) {
+        if (player.hasPermission(PermissionNames.USER_DONE) || player.hasPermission(PermissionNames.ADMIN_DONE)) {
             allowed_commands.add("done");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.done")) {
+        if (player.hasPermission(PermissionNames.ADMIN_DONE)) {
             allowed_commands.add("donelist");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.tp")) {
+        if (player.hasPermission(PermissionNames.ADMIN_TP)) {
             allowed_commands.add("tp");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.id")) {
-            allowed_commands.add("id");
-        }
-        if (plugin.cPerms(p, "PlotMe.use.clear") || plugin.cPerms(p, "PlotMe.admin.clear")) {
+        if (player.hasPermission(PermissionNames.USER_CLEAR) || player.hasPermission(PermissionNames.ADMIN_CLEAR)) {
             allowed_commands.add("clear");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.dispose") || plugin.cPerms(p, "PlotMe.use.dispose")) {
+        if (player.hasPermission(PermissionNames.ADMIN_DISPOSE) || player.hasPermission(PermissionNames.USER_DISPOSE)) {
             allowed_commands.add("dispose");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.reset")) {
+        if (player.hasPermission(PermissionNames.ADMIN_RESET)) {
             allowed_commands.add("reset");
         }
-        if (plugin.cPerms(p, "PlotMe.use.add") || plugin.cPerms(p, "PlotMe.admin.add")) {
+        if (player.hasPermission(PermissionNames.USER_ADD) || player.hasPermission(PermissionNames.ADMIN_ADD)) {
             allowed_commands.add("add");
         }
-        if (plugin.cPerms(p, "PlotMe.use.remove") || plugin.cPerms(p, "PlotMe.admin.remove")) {
+        if (player.hasPermission(PermissionNames.USER_REMOVE) || player.hasPermission(PermissionNames.ADMIN_REMOVE)) {
             allowed_commands.add("remove");
         }
-        if (plugin.getConfig().getBoolean("allowToDeny")) {
-            if (plugin.cPerms(p, "PlotMe.use.deny") || plugin.cPerms(p, "PlotMe.admin.deny")) {
-                allowed_commands.add("deny");
-            }
-            if (plugin.cPerms(p, "PlotMe.use.undeny") || plugin.cPerms(p, "PlotMe.admin.undeny")) {
-                allowed_commands.add("undeny");
-            }
+        if (player.hasPermission(PermissionNames.USER_DENY) || player.hasPermission(PermissionNames.ADMIN_DENY)) {
+            allowed_commands.add("deny");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.setowner")) {
+        if (player.hasPermission(PermissionNames.USER_UNDENY) || player.hasPermission(PermissionNames.ADMIN_UNDENY)) {
+            allowed_commands.add("undeny");
+        }
+        if (player.hasPermission(PermissionNames.ADMIN_SETOWNER)) {
             allowed_commands.add("setowner");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.move")) {
+        if (player.hasPermission(PermissionNames.ADMIN_MOVE)) {
             allowed_commands.add("move");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.weanywhere")) {
+        if (player.hasPermission(PermissionNames.ADMIN_WEANYWHERE)) {
             allowed_commands.add("weanywhere");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.reload")) {
-            allowed_commands.add("reload");
-        }
-        if (plugin.cPerms(p, "PlotMe.admin.list")) {
+        if (player.hasPermission(PermissionNames.ADMIN_LIST)) {
             allowed_commands.add("listother");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.expired")) {
+        if (player.hasPermission(PermissionNames.ADMIN_EXPIRED)) {
             allowed_commands.add("expired");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.addtime")) {
+        if (player.hasPermission(PermissionNames.ADMIN_ADDTIME)) {
             allowed_commands.add("addtime");
         }
-        if (plugin.cPerms(p, "PlotMe.admin.resetexpired")) {
-            allowed_commands.add("resetexpired");
-        }
-        if (plugin.cPerms(p, "Plotme.use.nameplot")) {
-            allowed_commands.add("name");
-        }
-        PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(p);
 
-        if (plugin.getPlotMeCoreManager().isPlotWorld(p) && ecoon) {
-            if (plugin.cPerms(p, "PlotMe.use.buy")) {
+        PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(player);
+
+        boolean economyEnabled = pmi != null && plugin.getPlotMeCoreManager().isEconomyEnabled(pmi);
+
+        if (plugin.getPlotMeCoreManager().isPlotWorld(player) && economyEnabled) {
+            if (player.hasPermission(PermissionNames.USER_BUY)) {
                 allowed_commands.add("buy");
             }
-            if (plugin.cPerms(p, "PlotMe.use.sell")) {
+            if (player.hasPermission(PermissionNames.USER_SELL)) {
                 allowed_commands.add("sell");
-                if (pmi.isCanSellToBank()) {
-                    allowed_commands.add("sellbank");
-                }
             }
-            if (plugin.cPerms(p, "PlotMe.use.auction")) {
+            if (player.hasPermission(PermissionNames.USE_AUCTION)) {
                 allowed_commands.add("auction");
             }
-            if (plugin.cPerms(p, "PlotMe.use.bid")) {
+            if (player.hasPermission(PermissionNames.PLOT_ME_USE_BID)) {
                 allowed_commands.add("bid");
             }
         }
 
-        maxpage = (int) Math.ceil((double) allowed_commands.size() / max);
+        int maxpage = (int) Math.ceil(allowed_commands.size() / 4);
 
         if (page > maxpage) {
             page = 1;
         }
 
-        p.sendMessage(RED + " ---==" + AQUA + C("HelpTitle") + " " + page + "/" + maxpage + RED + "==--- ");
+        player.sendMessage("§c ---==§b" + C("HelpTitle") + " " + page + "/" + maxpage + "§c==--- ");
 
-        for (int ctr = (page - 1) * max; ctr < (page * max) && ctr < allowed_commands.size(); ctr++) {
+        for (int ctr = (page - 1) * 4; ctr < (page * 4) && ctr < allowed_commands.size(); ctr++) {
             String allowedcmd = allowed_commands.get(ctr);
 
-            if (allowedcmd.equalsIgnoreCase("limit")) {
-                if (plugin.getPlotMeCoreManager().isPlotWorld(p) || plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                    World w = null;
+            if ("limit".equalsIgnoreCase(allowedcmd)) {
+                int maxplots = getPlotLimit(player);
+                if (plugin.getPlotMeCoreManager().isPlotWorld(player)) {
 
-                    if (plugin.getPlotMeCoreManager().isPlotWorld(p)) {
-                        w = p.getWorld();
-                    } else if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                        w = plugin.getPlotMeCoreManager().getFirstWorld();
-                    }
+                    IWorld world = player.getWorld();
 
-                    int maxplots = plugin.getPlotLimit(p);
-                    int ownedplots = plugin.getPlotMeCoreManager().getNbOwnedPlot(p, w);
+                    int ownedplots = plugin.getSqlManager().getPlotCount(world.getName().toLowerCase(), player.getUniqueId(), player.getName());
 
                     if (maxplots == -1) {
-                        p.sendMessage(GREEN + C("HelpYourPlotLimitWorld") + " : " + AQUA + ownedplots + GREEN + " " + C("HelpUsedOf") + " " + AQUA + C("WordInfinite"));
+                        player.sendMessage(
+                                "§a" + C("HelpYourPlotLimitWorld") + " : §b" + ownedplots + "§a " + C("HelpUsedOf") + " §b" + C("WordInfinite"));
                     } else {
-                        p.sendMessage(GREEN + C("HelpYourPlotLimitWorld") + " : " + AQUA + ownedplots + GREEN + " " + C("HelpUsedOf") + " " + AQUA + maxplots);
+                        player.sendMessage("§a" + C("HelpYourPlotLimitWorld") + " : §b" + ownedplots + "§a " + C("HelpUsedOf") + " §b" + maxplots);
+                    }
+                } else if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+
+                    IWorld world = plugin.getPlotMeCoreManager().getFirstWorld();
+
+                    int ownedplots = plugin.getSqlManager().getPlotCount(world.getName().toLowerCase(), player.getUniqueId(), player.getName());
+
+                    if (maxplots == -1) {
+                        player.sendMessage(
+                                "§a" + C("HelpYourPlotLimitWorld") + " : §b" + ownedplots + "§a " + C("HelpUsedOf") + " §b" + C("WordInfinite"));
+                    } else {
+                        player.sendMessage("§a" + C("HelpYourPlotLimitWorld") + " : §b" + ownedplots + "§a " + C("HelpUsedOf") + " §b" + maxplots);
                     }
                 } else {
-                    p.sendMessage(GREEN + C("HelpYourPlotLimitWorld") + " : " + AQUA + C("MsgNotPlotWorld"));
+                    player.sendMessage("§a" + C("HelpYourPlotLimitWorld") + " : §b" + C("MsgNotPlotWorld"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("claim")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandClaim"));
-                if (ecoon && pmi != null && pmi.getClaimPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpClaim") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getClaimPrice()));
+            } else if ("claim".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme claim");
+                if (economyEnabled && pmi != null && pmi.getClaimPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpClaim") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getClaimPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpClaim"));
+                    player.sendMessage("§b " + C("HelpClaim"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("claim.other")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandClaim") + " <" + C("WordPlayer") + ">");
-                if (ecoon && pmi != null && pmi.getClaimPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpClaimOther") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getClaimPrice()));
+            } else if ("claim.other".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme claim <" + C("WordPlayer") + ">");
+                if (economyEnabled && pmi != null && pmi.getClaimPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpClaimOther") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getClaimPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpClaimOther"));
+                    player.sendMessage("§b " + C("HelpClaimOther"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("auto")) {
-                if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandAuto") + " [" + C("WordWorld") + "]");
+            } else if ("auto".equalsIgnoreCase(allowedcmd)) {
+                if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+                    player.sendMessage("§a /plotme auto [" + C("WordWorld") + "]");
                 } else {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandAuto"));
+                    player.sendMessage("§a /plotme auto");
                 }
 
-                if (ecoon && pmi != null && pmi.getClaimPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpAuto") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getClaimPrice()));
+                if (economyEnabled && pmi != null && pmi.getClaimPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpAuto") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getClaimPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpAuto"));
+                    player.sendMessage("§b " + C("HelpAuto"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("home")) {
-                if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandHome") + "[:#] [" + C("WordWorld") + "]");
+            } else if ("home".equalsIgnoreCase(allowedcmd)) {
+                if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+                    player.sendMessage("§a /plotme home[:#] [" + C("WordWorld") + "]");
                 } else {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandHome") + "[:#]");
-                }
-
-                if (ecoon && pmi != null && pmi.getPlotHomePrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpHome") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getPlotHomePrice()));
-                } else {
-                    p.sendMessage(AQUA + " " + C("HelpHome"));
-                }
-            } else if (allowedcmd.equalsIgnoreCase("home.other")) {
-                if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandHome") + "[:#] <" + C("WordPlayer") + "> [" + C("WordWorld") + "]");
-                } else {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandHome") + "[:#] <" + C("WordPlayer") + ">");
+                    player.sendMessage("§a /plotme home[:#]");
                 }
 
-                if (ecoon && pmi != null && pmi.getPlotHomePrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpHomeOther") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getPlotHomePrice()));
+                if (economyEnabled && pmi != null && pmi.getPlotHomePrice() != 0) {
+                    player.sendMessage("§b " + C("HelpHome") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getPlotHomePrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpHomeOther"));
+                    player.sendMessage("§b " + C("HelpHome"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("info")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandInfo"));
-                p.sendMessage(AQUA + " " + C("HelpInfo"));
-            } else if (allowedcmd.equalsIgnoreCase("comment")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandComment") + " <" + C("WordComment") + ">");
-                if (ecoon && pmi != null && pmi.getAddCommentPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpComment") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getAddCommentPrice()));
+            } else if ("home.other".equalsIgnoreCase(allowedcmd)) {
+                if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+                    player.sendMessage("§a /plotme home[:#] <" + C("WordPlayer") + "> [" + C("WordWorld") + "]");
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpComment"));
-                }
-            } else if (allowedcmd.equalsIgnoreCase("comments")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandComments"));
-                p.sendMessage(AQUA + " " + C("HelpComments"));
-            } else if (allowedcmd.equalsIgnoreCase("list")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandList"));
-                p.sendMessage(AQUA + " " + C("HelpList"));
-            } else if (allowedcmd.equalsIgnoreCase("listother")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandList") + " <" + C("WordPlayer") + ">");
-                p.sendMessage(AQUA + " " + C("HelpListOther"));
-            } else if (allowedcmd.equalsIgnoreCase("biomeinfo")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandBiome"));
-                p.sendMessage(AQUA + " " + C("HelpBiomeInfo"));
-            } else if (allowedcmd.equalsIgnoreCase("biome")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandBiome") + " <" + C("WordBiome") + ">");
-                if (ecoon && pmi != null && pmi.getBiomeChangePrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpBiome") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getBiomeChangePrice()));
-                } else {
-                    p.sendMessage(AQUA + " " + C("HelpBiome"));
-                }
-            } else if (allowedcmd.equalsIgnoreCase("biomelist")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandBiomelist"));
-                p.sendMessage(AQUA + " " + C("HelpBiomeList"));
-            } else if (allowedcmd.equalsIgnoreCase("done")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandDone"));
-                p.sendMessage(AQUA + " " + C("HelpDone"));
-            } else if (allowedcmd.equalsIgnoreCase("tp")) {
-                if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandTp") + " <" + C("WordId") + "> [" + C("WordWorld") + "]");
-                } else {
-                    p.sendMessage(GREEN + " /plotme " + C("CommandTp") + " <" + C("WordId") + ">");
+                    player.sendMessage("§a /plotme home[:#] <" + C("WordPlayer") + ">");
                 }
 
-                p.sendMessage(AQUA + " " + C("HelpTp"));
-            } else if (allowedcmd.equalsIgnoreCase("id")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandId"));
-                p.sendMessage(AQUA + " " + C("HelpId"));
-            } else if (allowedcmd.equalsIgnoreCase("clear")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandClear"));
-                if (ecoon && pmi != null && pmi.getClearPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpId") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getClearPrice()));
+                if (economyEnabled && pmi != null && pmi.getPlotHomePrice() != 0) {
+                    player.sendMessage("§b " + C("HelpHomeOther") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getPlotHomePrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpClear"));
+                    player.sendMessage("§b " + C("HelpHomeOther"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("reset")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandReset"));
-                p.sendMessage(AQUA + " " + C("HelpReset"));
-            } else if (allowedcmd.equalsIgnoreCase("add")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandAdd") + " <" + C("WordPlayer") + ">");
-                if (ecoon && pmi != null && pmi.getAddPlayerPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpAdd") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getAddPlayerPrice()));
+            } else if ("info".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme info");
+                player.sendMessage("§b " + C("HelpInfo"));
+            } else if ("list".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme list");
+                player.sendMessage("§b " + C("HelpList"));
+            } else if ("listother".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme list <" + C("WordPlayer") + ">");
+                player.sendMessage("§b " + C("HelpListOther"));
+            } else if ("biome".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme biome <" + C("WordBiome") + ">");
+                if (economyEnabled && pmi != null && pmi.getBiomeChangePrice() != 0) {
+                    player.sendMessage("§b " + C("HelpBiome") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getBiomeChangePrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpAdd"));
+                    player.sendMessage("§b " + C("HelpBiome"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("deny")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandDeny") + " <" + C("WordPlayer") + ">");
-                if (ecoon && pmi != null && pmi.getDenyPlayerPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpDeny") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getDenyPlayerPrice()));
+            } else if ("biomes".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme biomes");
+                player.sendMessage("§b " + C("HelpBiomeList"));
+            } else if ("done".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme done");
+                player.sendMessage("§b " + C("HelpDone"));
+            } else if ("tp".equalsIgnoreCase(allowedcmd)) {
+                if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+                    player.sendMessage("§a /plotme tp <ID> [" + C("WordWorld") + "]");
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpDeny"));
+                    player.sendMessage("§a /plotme tp <ID>");
                 }
-            } else if (allowedcmd.equalsIgnoreCase("remove")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandRemove") + " <" + C("WordPlayer") + ">");
-                if (ecoon && pmi != null && pmi.getRemovePlayerPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpRemove") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getRemovePlayerPrice()));
+                player.sendMessage("§b " + C("HelpTp"));
+            } else if ("clear".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme clear");
+                if (economyEnabled && pmi != null && pmi.getClearPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpId") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getClearPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpRemove"));
+                    player.sendMessage("§b " + C("HelpClear"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("undeny")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandUndeny") + " <" + C("WordPlayer") + ">");
-                if (ecoon && pmi != null && pmi.getUndenyPlayerPrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpUndeny") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getUndenyPlayerPrice()));
+            } else if ("reset".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme reset");
+                player.sendMessage("§b " + C("HelpReset"));
+            } else if ("add".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme add <" + C("WordPlayer") + ">");
+                if (economyEnabled && pmi != null && pmi.getAddPlayerPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpAdd") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getAddPlayerPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpUndeny"));
+                    player.sendMessage("§b " + C("HelpAdd"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("setowner")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandSetowner") + " <" + C("WordPlayer") + ">");
-                p.sendMessage(AQUA + " " + C("HelpSetowner"));
-            } else if (allowedcmd.equalsIgnoreCase("move")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandMove") + " <" + C("WordIdFrom") + "> <" + C("WordIdTo") + ">");
-                p.sendMessage(AQUA + " " + C("HelpMove"));
-            } else if (allowedcmd.equalsIgnoreCase("weanywhere")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandWEAnywhere"));
-                p.sendMessage(AQUA + " " + C("HelpWEAnywhere"));
-            } else if (allowedcmd.equalsIgnoreCase("expired")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandExpired") + " [page]");
-                p.sendMessage(AQUA + " " + C("HelpExpired"));
-            } else if (allowedcmd.equalsIgnoreCase("donelist")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandDoneList") + " [page]");
-                p.sendMessage(AQUA + " " + C("HelpDoneList"));
-            } else if (allowedcmd.equalsIgnoreCase("addtime")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandAddtime"));
-                int days = (pmi == null) ? 0 : pmi.getDaysToExpiration();
-                if (days == 0) {
-                    p.sendMessage(AQUA + " " + C("HelpAddTime1") + " " + RESET + C("WordNever"));
+            } else if ("deny".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme deny <" + C("WordPlayer") + ">");
+                if (economyEnabled && pmi != null && pmi.getDenyPlayerPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpDeny") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getDenyPlayerPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpAddTime1") + " " + RESET + days + AQUA + " " + C("HelpAddTime2"));
+                    player.sendMessage("§b " + C("HelpDeny"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("reload")) {
-                p.sendMessage(GREEN + " /plotme reload");
-                p.sendMessage(AQUA + " " + C("HelpReload"));
-            } else if (allowedcmd.equalsIgnoreCase("dispose")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandDispose"));
-                if (ecoon && pmi != null && pmi.getDisposePrice() != 0) {
-                    p.sendMessage(AQUA + " " + C("HelpDispose") + " " + C("WordPrice") + " : " + RESET + Util().round(pmi.getDisposePrice()));
+            } else if ("remove".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme remove <" + C("WordPlayer") + ">");
+                if (economyEnabled && pmi != null && pmi.getRemovePlayerPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpRemove") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getRemovePlayerPrice()));
                 } else {
-                    p.sendMessage(AQUA + " " + C("HelpDispose"));
+                    player.sendMessage("§b " + C("HelpRemove"));
                 }
-            } else if (allowedcmd.equalsIgnoreCase("buy")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandBuy"));
-                p.sendMessage(AQUA + " " + C("HelpBuy"));
-            } else if (allowedcmd.equalsIgnoreCase("sell")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandSell") + " [" + C("WordAmount") + "]");
-                p.sendMessage(AQUA + " " + C("HelpSell") + " " + C("WordDefault") + " : " + RESET + Util().round(pmi.getSellToPlayerPrice()));
-            } else if (allowedcmd.equalsIgnoreCase("sellbank")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandSellBank"));
-                p.sendMessage(AQUA + " " + C("HelpSellBank") + " " + RESET + Util().round(pmi.getSellToBankPrice()));
-            } else if (allowedcmd.equalsIgnoreCase("auction")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandAuction") + " [" + C("WordAmount") + "]");
-                p.sendMessage(AQUA + " " + C("HelpAuction") + " " + C("WordDefault") + " : " + RESET + "1");
-            } else if (allowedcmd.equalsIgnoreCase("resetexpired")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandResetExpired") + " <" + C("WordWorld") + ">");
-                p.sendMessage(AQUA + " " + C("HelpResetExpired"));
-            } else if (allowedcmd.equalsIgnoreCase("bid")) {
-                p.sendMessage(GREEN + " /plotme " + C("CommandBid") + " <" + C("WordAmount") + ">");
-                p.sendMessage(AQUA + " " + C("HelpBid"));
-            } else if (allowedcmd.equalsIgnoreCase("name")) {
-                // TODO: Add captions for this command.
-                p.sendMessage(GREEN + " /plotme " + C("CommandName") + " <name>");
-                p.sendMessage(AQUA + "Give your plot a custom name");
+            } else if ("undeny".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme undeny <" + C("WordPlayer") + ">");
+                if (economyEnabled && pmi != null && pmi.getUndenyPlayerPrice() != 0) {
+                    player.sendMessage("§b " + C("HelpUndeny") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getUndenyPlayerPrice()));
+                } else {
+                    player.sendMessage("§b " + C("HelpUndeny"));
+                }
+            } else if ("setowner".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme setowner <" + C("WordPlayer") + ">");
+                player.sendMessage("§b " + C("HelpSetowner"));
+            } else if ("move".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme move <" + C("WordIdFrom") + "> <" + C("WordIdTo") + ">");
+                player.sendMessage("§b " + C("HelpMove"));
+            } else if ("weanywhere".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme weanywhere");
+                player.sendMessage("§b " + C("HelpWEAnywhere"));
+            } else if ("expired".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme expired [page]");
+                player.sendMessage("§b " + C("HelpExpired"));
+            } else if ("donelist".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme donelist [page]");
+                player.sendMessage("§b " + C("HelpDoneList"));
+            } else if ("addtime".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme addtime");
+                int days;
+                if (pmi == null) {
+                    days = 0;
+                } else {
+                    days = pmi.getDaysToExpiration();
+                }
+                if (days != 0) {
+                    player.sendMessage("§b " + C("HelpAddTime1") + " §r" + days + "§b " + C("HelpAddTime2"));
+                }
+            } else if ("dispose".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme dispose");
+                if (economyEnabled && pmi != null && pmi.getDisposePrice() != 0) {
+                    player.sendMessage("§b " + C("HelpDispose") + " " + C("WordPrice") + " : §r" + Math.round(pmi.getDisposePrice()));
+                } else {
+                    player.sendMessage("§b " + C("HelpDispose"));
+                }
+            } else if ("buy".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme buy");
+                player.sendMessage("§b " + C("HelpBuy"));
+            } else if ("sell".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme sell [" + C("WordAmount") + "]");
+                assert pmi != null;
+                player.sendMessage("§b " + C("HelpSell") + " " + C("WordDefault") + " : §r" + Math.round(pmi.getSellToPlayerPrice()));
+            } else if ("auction".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme auction [" + C("WordAmount") + "]");
+                player.sendMessage("§b " + C("HelpAuction") + " " + C("WordDefault") + " : §r1");
+            } else if ("bid".equalsIgnoreCase(allowedcmd)) {
+                player.sendMessage("§a /plotme bid <" + C("WordAmount") + ">");
+                player.sendMessage("§b " + C("HelpBid"));
             }
         }
-
         return true;
     }
 }

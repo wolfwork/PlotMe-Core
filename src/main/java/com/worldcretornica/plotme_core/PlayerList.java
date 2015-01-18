@@ -1,7 +1,5 @@
 package com.worldcretornica.plotme_core;
 
-import org.bukkit.Bukkit;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -9,7 +7,12 @@ import java.util.UUID;
 
 public class PlayerList {
 
+    private PlotMe_Core api;
     private HashMap<String, UUID> playerlist;
+
+    public PlayerList(PlotMe_Core api) {
+        this.api = api;
+    }
 
     public PlayerList() {
         playerlist = new HashMap<>();
@@ -28,22 +31,20 @@ public class PlayerList {
     }
 
     public String put(UUID uuid) {
-        String name = Bukkit.getOfflinePlayer(uuid).getName();
+        String name = api.getServerBridge().getOfflinePlayer(uuid).getName();
         playerlist.put(name, uuid);
         return name;
     }
 
     public UUID remove(String name) {
         String found = "";
-        UUID uuid = null;
-        for(String key : playerlist.keySet())
-        {
-            if(key.equalsIgnoreCase(name)) {
+        for (String key : playerlist.keySet()) {
+            if (key.equalsIgnoreCase(name)) {
                 found = key;
-                continue;
             }
         }
-        if(!found.equals("")) {
+        UUID uuid = null;
+        if (!found.isEmpty()) {
             uuid = playerlist.get(found);
             playerlist.remove(found);
         }
@@ -51,8 +52,8 @@ public class PlayerList {
     }
 
     public String remove(UUID uuid) {
-        for(String name : playerlist.keySet()) {
-            if(playerlist.get(name).equals(uuid)) {
+        for (String name : playerlist.keySet()) {
+            if (playerlist.get(name).equals(uuid)) {
                 playerlist.remove(name);
                 return name;
             }
@@ -68,22 +69,17 @@ public class PlayerList {
         StringBuilder list = new StringBuilder();
 
         for (String s : playerlist.keySet()) {
-                list = list.append(s + ", ");
+            list = list.append(s + ", ");
         }
         if (list.length() > 1) {
             list = list.delete(list.length() - 2, list.length());
         }
-        if(list.toString() == null)
-        {
-            return "";
-        } else {
-            return list.toString();
-        }
+        return list.toString();
     }
 
     public boolean contains(String name) {
-        for(String key : playerlist.keySet()) {
-            if(key.equalsIgnoreCase(name)) {
+        for (String key : playerlist.keySet()) {
+            if (key.equalsIgnoreCase(name)) {
                 return true;
             }
         }
@@ -107,13 +103,13 @@ public class PlayerList {
     }
 
     public void replace(UUID uuid, String newname) {
-        if(uuid != null && playerlist != null) {
-            if(this.contains(uuid)) {
+        if (uuid != null && playerlist != null) {
+            if (contains(uuid)) {
                 Iterator<String> it = playerlist.keySet().iterator();
                 while (it.hasNext()) {
                     String name = it.next();
 
-                    if(playerlist.get(name) != null && playerlist.get(name).equals(uuid)) {
+                    if (playerlist.get(name) != null && playerlist.get(name).equals(uuid)) {
                         playerlist.remove(name);
                         playerlist.put(newname, uuid);
                         return;
@@ -124,13 +120,13 @@ public class PlayerList {
     }
 
     public void replace(String name, UUID newuuid) {
-        if(newuuid != null && playerlist != null) {
-            if(this.contains(name)) {
+        if (newuuid != null && playerlist != null) {
+            if (contains(name)) {
                 Iterator<String> it = playerlist.keySet().iterator();
                 while (it.hasNext()) {
                     String key = it.next();
 
-                    if(key.equalsIgnoreCase(name)) {
+                    if (key.equalsIgnoreCase(name)) {
                         playerlist.remove(key);
                         playerlist.put(name, newuuid);
                         return;
