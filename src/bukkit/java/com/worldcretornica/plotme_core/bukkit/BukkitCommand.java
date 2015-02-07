@@ -1,48 +1,16 @@
 package com.worldcretornica.plotme_core.bukkit;
 
 import com.worldcretornica.plotme_core.PlotMe_Core;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitCommandSender;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import com.worldcretornica.plotme_core.commands.CmdAdd;
-import com.worldcretornica.plotme_core.commands.CmdAddTime;
-import com.worldcretornica.plotme_core.commands.CmdAuction;
-import com.worldcretornica.plotme_core.commands.CmdAuto;
-import com.worldcretornica.plotme_core.commands.CmdBid;
-import com.worldcretornica.plotme_core.commands.CmdBiome;
-import com.worldcretornica.plotme_core.commands.CmdBiomes;
-import com.worldcretornica.plotme_core.commands.CmdBuy;
-import com.worldcretornica.plotme_core.commands.CmdClaim;
-import com.worldcretornica.plotme_core.commands.CmdClear;
-import com.worldcretornica.plotme_core.commands.CmdDeny;
-import com.worldcretornica.plotme_core.commands.CmdDispose;
-import com.worldcretornica.plotme_core.commands.CmdDone;
-import com.worldcretornica.plotme_core.commands.CmdDoneList;
-import com.worldcretornica.plotme_core.commands.CmdExpired;
-import com.worldcretornica.plotme_core.commands.CmdHome;
-import com.worldcretornica.plotme_core.commands.CmdInfo;
-import com.worldcretornica.plotme_core.commands.CmdMove;
-import com.worldcretornica.plotme_core.commands.CmdPlotList;
-import com.worldcretornica.plotme_core.commands.CmdProtect;
-import com.worldcretornica.plotme_core.commands.CmdReload;
-import com.worldcretornica.plotme_core.commands.CmdRemove;
-import com.worldcretornica.plotme_core.commands.CmdReset;
-import com.worldcretornica.plotme_core.commands.CmdResetExpired;
-import com.worldcretornica.plotme_core.commands.CmdSell;
-import com.worldcretornica.plotme_core.commands.CmdSetOwner;
-import com.worldcretornica.plotme_core.commands.CmdShowHelp;
-import com.worldcretornica.plotme_core.commands.CmdTP;
-import com.worldcretornica.plotme_core.commands.CmdUndeny;
-import com.worldcretornica.plotme_core.commands.CmdWEAnywhere;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import com.worldcretornica.plotme_core.bukkit.api.*;
+import com.worldcretornica.plotme_core.commands.*;
+import org.bukkit.command.*;
+import org.bukkit.entity.*;
 
 public class BukkitCommand implements CommandExecutor {
 
     private final PlotMe_Core api;
     private final CmdAdd add;
-    private final CmdAddTime addtime;
+    private final CmdAddTime addTime;
     private final CmdAuction auction;
     private final CmdAuto auto;
     private final CmdBid bid;
@@ -54,30 +22,31 @@ public class BukkitCommand implements CommandExecutor {
     private final CmdDeny deny;
     private final CmdDispose dispose;
     private final CmdDone done;
-    private final CmdDoneList donelist;
+    private final CmdDoneList doneList;
     private final CmdExpired expired;
     private final CmdHome home;
     private final CmdInfo info;
     private final CmdMove move;
-    private final CmdPlotList plotlist;
+    private final CmdPlotList plotList;
     private final CmdProtect protect;
     private final CmdReload reload;
     private final CmdRemove remove;
     private final CmdReset reset;
-    private final CmdResetExpired resetexpired;
+    private final CmdResetExpired resetExpired;
     private final CmdSell sell;
-    private final CmdSetOwner setowner;
-    private final CmdShowHelp showhelp;
+    private final CmdSetOwner setOwner;
+    private final CmdShowHelp showHelp;
     private final CmdTP tp;
     private final CmdUndeny undeny;
-    private final CmdWEAnywhere weanywhere;
+    private final CmdWEAnywhere weAnywhere;
+    private final CmdMiddle middle;
     private final PlotMe_CorePlugin plugin;
 
     public BukkitCommand(PlotMe_CorePlugin instance) {
         plugin = instance;
         api = instance.getAPI();
         add = new CmdAdd(api);
-        addtime = new CmdAddTime(api);
+        addTime = new CmdAddTime(api);
         auction = new CmdAuction(api);
         auto = new CmdAuto(api);
         bid = new CmdBid(api);
@@ -89,23 +58,24 @@ public class BukkitCommand implements CommandExecutor {
         deny = new CmdDeny(api);
         dispose = new CmdDispose(api);
         done = new CmdDone(api);
-        donelist = new CmdDoneList(api);
+        doneList = new CmdDoneList(api);
         expired = new CmdExpired(api);
         home = new CmdHome(api);
         info = new CmdInfo(api);
         move = new CmdMove(api);
-        plotlist = new CmdPlotList(api);
+        plotList = new CmdPlotList(api);
         protect = new CmdProtect(api);
         reload = new CmdReload(api);
         remove = new CmdRemove(api);
         reset = new CmdReset(api);
-        resetexpired = new CmdResetExpired(api);
+        resetExpired = new CmdResetExpired(api);
         sell = new CmdSell(api);
-        setowner = new CmdSetOwner(api);
-        showhelp = new CmdShowHelp(api);
+        setOwner = new CmdSetOwner(api);
+        showHelp = new CmdShowHelp(api);
         tp = new CmdTP(api);
         undeny = new CmdUndeny(api);
-        weanywhere = new CmdWEAnywhere(api);
+        middle = new CmdMiddle(api);
+        weAnywhere = new CmdWEAnywhere(api);
     }
 
     private String C(String caption) {
@@ -125,38 +95,38 @@ public class BukkitCommand implements CommandExecutor {
                     return reload.exec(new BukkitCommandSender(sender));
                 }
                 if ("resetexpired".equalsIgnoreCase(args[0])) {
-                    return resetexpired.exec(new BukkitCommandSender(sender), args);
+                    return resetExpired.exec(new BukkitCommandSender(sender), args);
                 }
             }
         } else {
             BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer((Player) sender);
 
             if (args.length == 0) {
-                return showhelp.exec(player, 1);
+                return showHelp.exec(player, 1);
             } else {
-                int ipage = -1;
+                int page = -1;
 
                 try {
-                    ipage = Integer.parseInt(args[0]);
+                    page = Integer.parseInt(args[0]);
                 } catch (NumberFormatException ignored) {
                 }
 
-                if (ipage == -1) {
+                if (page == -1) {
                     if ("help".equalsIgnoreCase(args[0])) {
                         if (args.length > 1) {
                             String a1 = args[1];
-                            ipage = -1;
+                            page = -1;
 
                             try {
-                                ipage = Integer.parseInt(a1);
+                                page = Integer.parseInt(a1);
                             } catch (NumberFormatException ignored) {
                             }
                         }
 
-                        if (ipage == -1) {
-                            return showhelp.exec(player, 1);
+                        if (page == -1) {
+                            return showHelp.exec(player, 1);
                         } else {
-                            return showhelp.exec(player, ipage);
+                            return showHelp.exec(player, page);
                         }
                     }
                     if ("reload".equalsIgnoreCase(args[0])) {
@@ -201,28 +171,28 @@ public class BukkitCommand implements CommandExecutor {
                         return remove.exec(player, args);
                     }
                     if ("setowner".equalsIgnoreCase(args[0])) {
-                        return setowner.exec(player, args);
+                        return setOwner.exec(player, args);
                     }
                     if ("move".equalsIgnoreCase(args[0])) {
                         return move.exec(player, args);
                     }
                     if ("weanywhere".equalsIgnoreCase(args[0])) {
-                        return weanywhere.exec(player);
+                        return weAnywhere.exec(player);
                     }
                     if ("list".equalsIgnoreCase(args[0])) {
-                        return plotlist.exec(player, args);
+                        return plotList.exec(player, args);
                     }
                     if ("expired".equalsIgnoreCase(args[0])) {
                         return expired.exec(player, args);
                     }
                     if ("addtime".equalsIgnoreCase(args[0])) {
-                        return addtime.exec(player);
+                        return addTime.exec(player);
                     }
                     if ("done".equalsIgnoreCase(args[0])) {
                         return done.exec(player);
                     }
                     if ("donelist".equalsIgnoreCase(args[0])) {
-                        return donelist.exec(player, args);
+                        return doneList.exec(player, args);
                     }
                     if ("protect".equalsIgnoreCase(args[0])) {
                         return protect.exec(player);
@@ -242,12 +212,15 @@ public class BukkitCommand implements CommandExecutor {
                     if ("bid".equalsIgnoreCase(args[0])) {
                         return bid.exec(player, args);
                     }
+                    if ("middle".equalsIgnoreCase(args[0])) {
+                        return middle.exec(player);
+                    }
                     // arg can be "home" or "home:n"
                     if ((args[0].toLowerCase() + ":").startsWith("home:") || (args[0].toLowerCase() + ":").startsWith("h:")) {
                         return home.exec(player, args);
                     }
                 } else {
-                    return showhelp.exec(player, ipage);
+                    return showHelp.exec(player, page);
                 }
             }
         }

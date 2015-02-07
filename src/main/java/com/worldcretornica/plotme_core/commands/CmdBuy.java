@@ -2,7 +2,6 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -18,31 +17,29 @@ public class CmdBuy extends PlotCommand {
 
     public boolean exec(IPlayer player) {
         IWorld world = player.getWorld();
-        if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-            if (plugin.getPlotMeCoreManager().isEconomyEnabled(world)) {
+        if (manager.isPlotWorld(world)) {
+            if (manager.isEconomyEnabled(world)) {
                 if (player.hasPermission(PermissionNames.USER_BUY) || player.hasPermission("PlotMe.admin.buy")) {
-                    String id = PlotMeCoreManager.getPlotId(player);
+                    String id = manager.getPlotId(player);
 
                     if (id.isEmpty()) {
                         player.sendMessage("§c" + C("MsgNoPlotFound"));
-                    } else if (!plugin.getPlotMeCoreManager().isPlotAvailable(id, world)) {
-                        Plot plot = plugin.getPlotMeCoreManager().getPlotById(id, world);
+                    } else if (!manager.isPlotAvailable(id, world)) {
+                        Plot plot = manager.getPlotById(id, world);
 
                         if (plot.isForSale()) {
                             String buyer = player.getName();
 
-                            if (plot.getOwner().equalsIgnoreCase(buyer)) {
+                            if (player.getUniqueId().equals(plot.getOwnerId())) {
                                 player.sendMessage("§c" + C("MsgCannotBuyOwnPlot"));
                             } else {
-                                int plotlimit = getPlotLimit(player);
+                                int plotLimit = getPlotLimit(player);
 
-                                if (plotlimit != -1
-                                    && plugin.getSqlManager().getPlotCount(world.getName().toLowerCase(), player.getUniqueId(), player.getName())
-                                       >= plotlimit) {
+                                short plotsOwned = manager.getNbOwnedPlot(player.getUniqueId(), world.getName().toLowerCase());
+                                
+                                if (plotLimit != -1 && plotsOwned >= plotLimit) {
                                     player.sendMessage(C("MsgAlreadyReachedMaxPlots") + " ("
-                                                       + plugin.getSqlManager()
-                                            .getPlotCount(world.getName().toLowerCase(), player.getUniqueId(), player.getName()) + "/" + getPlotLimit(
-                                            player) + "). "
+                                                       + plotsOwned + "/" + getPlotLimit(player) + "). "
                                                        + C("WordUse") + " §c/plotme home§r " + C("MsgToGetToIt"));
                                 } else {
 
@@ -60,19 +57,19 @@ public class CmdBuy extends PlotCommand {
                                             EconomyResponse er = serverBridge.withdrawPlayer(player, cost);
 
                                             if (er.transactionSuccess()) {
-                                                String oldowner = plot.getOwner();
-                                                IOfflinePlayer playercurrentbidder = null;
+                                                String oldOwner = plot.getOwner();
+                                                IOfflinePlayer currentbidder = null;
 
                                                 if (plot.getOwnerId() != null) {
-                                                    playercurrentbidder = serverBridge.getOfflinePlayer(plot.getOwnerId());
+                                                    currentbidder = serverBridge.getOfflinePlayer(plot.getOwnerId());
                                                 }
 
-                                                if (playercurrentbidder != null) {
-                                                    EconomyResponse er2 = serverBridge.depositPlayer(playercurrentbidder, cost);
+                                                if (currentbidder != null) {
+                                                    EconomyResponse er2 = serverBridge.depositPlayer(currentbidder, cost);
 
                                                     if (er2.transactionSuccess()) {
                                                         for (IPlayer onlinePlayers : serverBridge.getOnlinePlayers()) {
-                                                            if (onlinePlayers.getName().equalsIgnoreCase(oldowner)) {
+                                                            if (onlinePlayers.getName().equalsIgnoreCase(oldOwner)) {
                                                                 onlinePlayers.sendMessage(C("WordPlot") + " " + id + " "
                                                                                           + C("MsgSoldTo") + " " + buyer + ". " + Util()
                                                                         .moneyFormat(cost, true));
@@ -93,12 +90,11 @@ public class CmdBuy extends PlotCommand {
                                                 plot.updateField("customprice", 0);
                                                 plot.updateField("forsale", false);
 
-                                                plugin.getPlotMeCoreManager().adjustWall(player);
-                                                plugin.getPlotMeCoreManager().setSellSign(world, plot);
-                                                PlotMeCoreManager.setOwnerSign(world, plot);
+                                                manager.adjustWall(world, id, true);
+                                                manager.removeSellSign(world, id);
+                                                manager.setOwnerSign(world, plot);
 
-                                                double price = -cost;
-                                                player.sendMessage(C("MsgPlotBought") + " " + Util().moneyFormat(price, true));
+                                                player.sendMessage(C("MsgPlotBought") + " " + Util().moneyFormat(-cost, true));
 
                                                 if (isAdvancedLogging()) {
                                                     plugin.getLogger()

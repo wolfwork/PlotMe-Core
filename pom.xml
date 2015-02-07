@@ -4,7 +4,7 @@
 
     <groupId>com.worldcretornica</groupId>
     <artifactId>PlotMe-Core</artifactId>
-    <version>0.16-SNAPSHOT</version>
+    <version>0.16.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>PlotMe-Core</name>
@@ -127,7 +127,7 @@
         <repository>
             <id>sponge-maven-repo</id>
             <name>Sponge maven repo</name>
-            <url>http://repo.spongepowered.org/Sponge/maven</url>
+            <url>http://repo.spongepowered.org/maven/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -142,11 +142,13 @@
             <groupId>org.spongepowered</groupId>
             <artifactId>spongeapi</artifactId>
             <version>1.1-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
             <version>1.8-R0.1-SNAPSHOT</version>
+            <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>

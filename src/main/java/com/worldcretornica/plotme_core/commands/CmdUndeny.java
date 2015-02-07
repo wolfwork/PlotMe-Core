@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -19,27 +18,27 @@ public class CmdUndeny extends PlotCommand {
     public boolean exec(IPlayer player, String[] args) {
         if (player.hasPermission(PermissionNames.ADMIN_UNDENY) || player.hasPermission(PermissionNames.USER_UNDENY)) {
             IWorld world = player.getWorld();
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(world);
-            if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-                String id = PlotMeCoreManager.getPlotId(player);
+            PlotMapInfo pmi = manager.getMap(world);
+            if (manager.isPlotWorld(world)) {
+                String id = manager.getPlotId(player);
                 if (id.isEmpty()) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!PlotMeCoreManager.isPlotAvailable(id, pmi)) {
+                } else if (!manager.isPlotAvailable(id, pmi)) {
                     if (args.length < 2 || args[1].isEmpty()) {
                         player.sendMessage(C("WordUsage") + ": §c/plotme undeny <" + C("WordPlayer") + ">");
                     } else {
-                        Plot plot = PlotMeCoreManager.getPlotById(id, pmi);
-                        String playername = player.getName();
+                        Plot plot = manager.getPlotById(id, pmi);
+                        String playerName = player.getName();
                         String denied = args[1];
 
-                        if (plot.getOwner().equalsIgnoreCase(playername) || player.hasPermission(PermissionNames.ADMIN_UNDENY)) {
+                        if (player.getUniqueId().equals(plot.getOwnerId()) || player.hasPermission(PermissionNames.ADMIN_UNDENY)) {
                             if (plot.isDeniedConsulting(denied) || plot.isGroupDenied(denied)) {
 
                                 double price = 0.0;
 
                                 InternalPlotRemoveDeniedEvent event;
 
-                                if (plugin.getPlotMeCoreManager().isEconomyEnabled(pmi)) {
+                                if (manager.isEconomyEnabled(pmi)) {
                                     price = pmi.getUndenyPlayerPrice();
                                     double balance = serverBridge.getBalance(player);
 
@@ -69,18 +68,17 @@ public class CmdUndeny extends PlotCommand {
                                 if (!event.isCancelled()) {
                                     plot.removeDenied(denied);
 
-                                    double price1 = -price;
                                     player.sendMessage(
-                                            C("WordPlayer") + " §c" + denied + "§r " + C("MsgNowUndenied") + " " + Util().moneyFormat(price1, true));
+                                            C("WordPlayer") + " §c" + denied + "§r " + C("MsgNowUndenied") + " " + Util().moneyFormat(-price, true));
 
                                     if (isAdvancedLogging()) {
                                         if (price != 0) {
                                             serverBridge.getLogger()
-                                                    .info(playername + " " + C("MsgUndeniedPlayer") + " " + denied + " " + C("MsgFromPlot") + " " + id
+                                                    .info(playerName + " " + C("MsgUndeniedPlayer") + " " + denied + " " + C("MsgFromPlot") + " " + id
                                                           + (" " + C("WordFor") + " " + price));
                                         } else {
                                             serverBridge.getLogger()
-                                                    .info(playername + " " + C("MsgUndeniedPlayer") + " " + denied + " " + C("MsgFromPlot") + " "
+                                                    .info(playerName + " " + C("MsgUndeniedPlayer") + " " + denied + " " + C("MsgFromPlot") + " "
                                                           + id);
                                         }
                                     }

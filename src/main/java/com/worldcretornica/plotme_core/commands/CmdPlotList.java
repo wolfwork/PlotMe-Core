@@ -18,7 +18,7 @@ public class CmdPlotList extends PlotCommand {
 
     public boolean exec(IPlayer player, String[] args) {
         if (player.hasPermission(PermissionNames.USER_LIST)) {
-            if (plugin.getPlotMeCoreManager().isPlotWorld(player)) {
+            if (manager.isPlotWorld(player)) {
                 String name;
                 UUID uuid;
 
@@ -32,35 +32,35 @@ public class CmdPlotList extends PlotCommand {
                     player.sendMessage(C("MsgListOfPlotsWhereYou"));
                 }
 
-                String oldworld = "";
+                String oldWorld = "";
 
                 // Get plots of that player
                 for (Plot plot : plugin.getSqlManager().getPlayerPlots(name, uuid)) {
                     IWorld world = serverBridge.getWorld(plot.getWorld());
                     if (world != null) {
-                        plugin.getPlotMeCoreManager().getMap(world).addPlot(plot.getId(), plot);
+                        manager.getMap(world).addPlot(plot.getId(), plot);
                     }
 
                     StringBuilder addition = new StringBuilder();
 
                     // Display worlds
-                    if (!oldworld.equalsIgnoreCase(plot.getWorld())) {
-                        oldworld = plot.getWorld();
+                    if (!oldWorld.equalsIgnoreCase(plot.getWorld())) {
+                        oldWorld = plot.getWorld();
                         player.sendMessage("  World: " + plot.getWorld());
                     }
 
                     // Is it expired?
                     if (plot.getExpiredDate() != null) {
-                        Date tempdate = plot.getExpiredDate();
+                        Date expiredDate = plot.getExpiredDate();
 
-                        if (tempdate.before(Calendar.getInstance().getTime())) {
+                        if (expiredDate.before(Calendar.getInstance().getTime())) {
                             addition.append("§c @" + plot.getExpiredDate() + "§r");
                         } else {
                             addition.append(" @" + plot.getExpiredDate());
                         }
                     }
 
-                    // Is it auctionned?
+                    // Is it auctioned?
                     if (plot.isAuctioned()) {
                         if (plot.getCurrentBidder() != null) {
                             addition.append(

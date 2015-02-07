@@ -2,7 +2,6 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -18,29 +17,29 @@ public class CmdBid extends PlotCommand {
 
     public boolean exec(IPlayer player, String[] args) {
         IWorld world = player.getWorld();
-        if (plugin.getPlotMeCoreManager().isEconomyEnabled(world)) {
+        if (manager.isEconomyEnabled(world)) {
             if (player.hasPermission(PermissionNames.PLOT_ME_USE_BID)) {
-                String id = PlotMeCoreManager.getPlotId(player);
+                String id = manager.getPlotId(player);
 
                 if (id.isEmpty()) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!plugin.getPlotMeCoreManager().isPlotAvailable(id, world)) {
-                    Plot plot = plugin.getPlotMeCoreManager().getPlotById(id, world);
+                } else if (!manager.isPlotAvailable(id, world)) {
+                    Plot plot = manager.getPlotById(id, world);
 
                     if (plot.isAuctioned()) {
                         String bidder = player.getName();
 
-                        if (plot.getOwner().equalsIgnoreCase(bidder)) {
+                        if (player.getUniqueId().equals(plot.getOwnerId())) {
                             player.sendMessage("§c" + C("MsgCannotBidOwnPlot"));
                         } else if (args.length == 2) {
-                            double currentbid = plot.getCurrentBid();
-                            String currentbidder = plot.getCurrentBidder();
+                            double currentBid = plot.getCurrentBid();
+                            String currentBidder = plot.getCurrentBidder();
                             IOfflinePlayer playercurrentbidder = serverBridge.getOfflinePlayer(plot.getCurrentBidderId());
 
                             double bid = Double.parseDouble(args[1]);
 
-                            if (bid == currentbid) {
-                                if (currentbidder != null) {
+                            if (bid == currentBid) {
+                                if (currentBidder != null) {
                                     player.sendMessage(
                                             "§c" + C("MsgInvalidBidMustBeAbove") + " §r" + Util().moneyFormat(plot.getCurrentBid(), false));
                                 }
@@ -48,7 +47,7 @@ public class CmdBid extends PlotCommand {
                                 double balance = serverBridge.getBalance(player);
 
                                 if (bid >= balance) {
-                                    if (!currentbidder.equals(bidder) || bid > balance + currentbid) {
+                                    if (!currentBidder.equals(bidder) || bid > balance + currentBid) {
                                         player.sendMessage("§c" + C("MsgNotEnoughBid"));
                                     } else {
                                         InternalPlotBidEvent
@@ -60,11 +59,11 @@ public class CmdBid extends PlotCommand {
 
                                             if (er.transactionSuccess()) {
                                                 if (playercurrentbidder != null) {
-                                                    EconomyResponse er2 = serverBridge.depositPlayer(playercurrentbidder, currentbid);
+                                                    EconomyResponse er2 = serverBridge.depositPlayer(playercurrentbidder, currentBid);
 
                                                     if (er2.transactionSuccess()) {
                                                         for (IPlayer onlinePlayers : serverBridge.getOnlinePlayers()) {
-                                                            if (onlinePlayers.getName().equalsIgnoreCase(currentbidder)) {
+                                                            if (onlinePlayers.getName().equalsIgnoreCase(currentBidder)) {
                                                                 onlinePlayers.sendMessage(
                                                                         C("MsgOutbidOnPlot") + " " + id + " " + C("MsgOwnedBy") + " " + plot
                                                                                 .getOwner() + ". " + Util().moneyFormat(bid, true));
@@ -83,10 +82,9 @@ public class CmdBid extends PlotCommand {
                                                 plot.updateField("currentbidder", bidder);
                                                 plot.updateField("currentbid", bid);
 
-                                                plugin.getPlotMeCoreManager().setSellSign(player.getWorld(), plot);
+                                                manager.setAuctionSign(player.getWorld(), plot);
 
-                                                double price = -bid;
-                                                player.sendMessage(C("MsgBidAccepted") + " " + Util().moneyFormat(price, true));
+                                                player.sendMessage(C("MsgBidAccepted") + " " + Util().moneyFormat(-bid, true));
 
                                                 if (isAdvancedLogging()) {
                                                     serverBridge.getLogger().info(bidder + " bid " + bid + " on plot " + id);
@@ -97,7 +95,7 @@ public class CmdBid extends PlotCommand {
                                             }
                                         }
                                     }
-                                } else if (currentbidder.equals(bidder) && bid > balance + currentbid) {
+                                } else if (currentBidder.equals(bidder) && bid > balance + currentBid) {
                                     player.sendMessage("§c" + C("MsgNotEnoughBid"));
                                 } else {
                                     InternalPlotBidEvent
@@ -109,11 +107,11 @@ public class CmdBid extends PlotCommand {
 
                                         if (er.transactionSuccess()) {
                                             if (playercurrentbidder != null) {
-                                                EconomyResponse er2 = serverBridge.depositPlayer(playercurrentbidder, currentbid);
+                                                EconomyResponse er2 = serverBridge.depositPlayer(playercurrentbidder, currentBid);
 
                                                 if (er2.transactionSuccess()) {
                                                     for (IPlayer onlinePlayers : serverBridge.getOnlinePlayers()) {
-                                                        if (onlinePlayers.getName().equalsIgnoreCase(currentbidder)) {
+                                                        if (onlinePlayers.getName().equalsIgnoreCase(currentBidder)) {
                                                             onlinePlayers.sendMessage(
                                                                     C("MsgOutbidOnPlot") + " " + id + " " + C("MsgOwnedBy") + " " + plot.getOwner()
                                                                     + ". " + Util().moneyFormat(bid, true));
@@ -132,10 +130,9 @@ public class CmdBid extends PlotCommand {
                                             plot.updateField("currentbidder", bidder);
                                             plot.updateField("currentbid", bid);
 
-                                            plugin.getPlotMeCoreManager().setSellSign(player.getWorld(), plot);
+                                            manager.setAuctionSign(player.getWorld(), plot);
 
-                                            double price = -bid;
-                                            player.sendMessage(C("MsgBidAccepted") + " " + Util().moneyFormat(price, true));
+                                            player.sendMessage(C("MsgBidAccepted") + " " + Util().moneyFormat(-bid, true));
 
                                             if (isAdvancedLogging()) {
                                                 serverBridge.getLogger().info(bidder + " bid " + bid + " on plot " + id);

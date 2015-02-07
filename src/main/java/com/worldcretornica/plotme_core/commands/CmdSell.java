@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -17,20 +16,24 @@ public class CmdSell extends PlotCommand {
 
     public boolean exec(IPlayer player, String[] args) {
         IWorld world = player.getWorld();
-        if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(world);
-            if (plugin.getPlotMeCoreManager().isEconomyEnabled(pmi)) {
+        if (manager.isPlotWorld(world)) {
+            PlotMapInfo pmi = manager.getMap(world);
+            if (manager.isEconomyEnabled(pmi)) {
 
                 if (pmi.isCanPutOnSale()) {
                     if (player.hasPermission(PermissionNames.USER_SELL) || player.hasPermission(PermissionNames.ADMIN_SELL)) {
-                        String id = PlotMeCoreManager.getPlotId(player);
+                        String id = manager.getPlotId(player);
 
                         if (id.isEmpty()) {
                             player.sendMessage("§c" + C("MsgNoPlotFound"));
-                        } else if (!PlotMeCoreManager.isPlotAvailable(id, pmi)) {
-                            Plot plot = PlotMeCoreManager.getPlotById(id, pmi);
+                        } else if (!manager.isPlotAvailable(id, pmi)) {
+                            Plot plot = manager.getPlotById(id, pmi);
 
-                            if (plot.getOwnerId().equals(player.getUniqueId()) || player.hasPermission(PermissionNames.ADMIN_SELL)) {
+                            if (plot.isAuctioned()) {
+                                player.sendMessage(C("You cannot sell a plot that is for auction"));
+                                return true;
+                            }
+                            if (player.getUniqueId().equals(plot.getOwnerId()) || player.hasPermission(PermissionNames.ADMIN_SELL)) {
 
                                 InternalPlotSellChangeEvent event;
 
@@ -46,8 +49,8 @@ public class CmdSell extends PlotCommand {
                                         plot.updateField("customprice", 0);
                                         plot.updateField("forsale", false);
 
-                                        plugin.getPlotMeCoreManager().adjustWall(player);
-                                        plugin.getPlotMeCoreManager().setSellSign(world, plot);
+                                        manager.adjustWall(player);
+                                        manager.removeSellSign(world, id);
 
                                         player.sendMessage(C("MsgPlotNoLongerSale"));
 
@@ -58,25 +61,19 @@ public class CmdSell extends PlotCommand {
                                     }
                                 } else {
                                     double price = pmi.getSellToPlayerPrice();
-                                    boolean bank = false;
 
                                     if (args.length == 2) {
-                                        if ("bank".equalsIgnoreCase(args[1])) {
-                                            bank = true;
-                                        } else {
-                                            try {
-                                                price = Double.parseDouble(args[1]);
-                                            } catch (Exception e) {
-                                                player.sendMessage(
-                                                        C("WordUsage") + ": §c /plotme sell <" + C("WordAmount") + ">§r " + C("WordExample")
-                                                        + ": §c/plotme sell 200");
-                                            }
+                                        try {
+                                            price = Double.parseDouble(args[1]);
+                                        } catch (Exception e) {
+                                            player.sendMessage(
+                                                    C("WordUsage") + ": §c /plotme sell <" + C("WordAmount") + ">§r " + C("WordExample")
+                                                    + ": §c/plotme sell 200");
+                                            return true;
                                         }
                                     }
 
-                                    if (bank) {
-                                        player.sendMessage("§c" + C("MsgCannotSellToBank"));
-                                    } else if (price < 0.0) {
+                                    if (price < 0.0) {
                                         player.sendMessage("§c" + C("MsgInvalidAmount"));
                                     } else {
                                         event = serverBridge.getEventFactory().callPlotSellChangeEvent(plugin, world, plot, player, price, true);
@@ -88,8 +85,8 @@ public class CmdSell extends PlotCommand {
                                             plot.updateField("customprice", price);
                                             plot.updateField("forsale", true);
 
-                                            plugin.getPlotMeCoreManager().adjustWall(player);
-                                            plugin.getPlotMeCoreManager().setSellSign(world, plot);
+                                            manager.adjustWall(player);
+                                            manager.setSellSign(world, plot);
 
                                             player.sendMessage(C("MsgPlotForSale"));
 

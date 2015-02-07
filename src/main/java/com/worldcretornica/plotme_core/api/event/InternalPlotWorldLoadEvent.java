@@ -1,21 +1,13 @@
 package com.worldcretornica.plotme_core.api.event;
 
-import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+public class InternalPlotWorldLoadEvent {
 
-public class InternalPlotWorldLoadEvent extends Event {
-
-    private static final HandlerList handlers = new HandlerList();
     private final String world;
     private final int nbPlots;
 
-    public InternalPlotWorldLoadEvent(String world, int nbplots) {
+    public InternalPlotWorldLoadEvent(String world, int nbPlots) {
         this.world = world;
-        nbPlots = nbplots;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
+        this.nbPlots = nbPlots;
     }
 
     /**
@@ -34,10 +26,5 @@ public class InternalPlotWorldLoadEvent extends Event {
      */
     public int getNbPlots() {
         return nbPlots;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
     }
 }

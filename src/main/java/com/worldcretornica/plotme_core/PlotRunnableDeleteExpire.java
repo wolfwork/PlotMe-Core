@@ -19,31 +19,31 @@ public class PlotRunnableDeleteExpire implements Runnable {
     @Override
     public void run() {
         SqlManager sqlmanager = plugin.getSqlManager();
-        PlotMeCoreManager plotMeCoreManager = plugin.getPlotMeCoreManager();
+        PlotMeCoreManager plotMeCoreManager = PlotMeCoreManager.getInstance();
 
         if (plugin.getWorldCurrentlyProcessingExpired() != null) {
             IWorld world = plugin.getWorldCurrentlyProcessingExpired();
-            List<Plot> expiredplots = sqlmanager.getExpiredPlots(world.getName(), 1, 5);
+            List<Plot> expiredPlots = sqlmanager.getExpiredPlots(world.getName(), 1, 5);
 
-            if (expiredplots.isEmpty()) {
+            if (expiredPlots.isEmpty()) {
                 plugin.setCounterExpired((short) 0);
             } else {
                 String ids = "";
 
-                for (Plot expiredplot : expiredplots) {
-                    InternalPlotResetEvent event = plugin.getServerBridge().getEventFactory().callPlotResetEvent(plugin, world, expiredplot, sender);
+                for (Plot expiredPlot : expiredPlots) {
+                    InternalPlotResetEvent event = plugin.getServerBridge().getEventFactory().callPlotResetEvent(plugin, world, expiredPlot, sender);
 
                     if (!event.isCancelled()) {
-                        plotMeCoreManager.clear(world, expiredplot, sender, ClearReason.Expired);
+                        plotMeCoreManager.clear(world, expiredPlot, sender, ClearReason.Expired);
 
-                        String id = expiredplot.getId();
-                        ids += "§c" + id + "§r, ";
+                        String id = expiredPlot.getId();
+                        ids += id + ", ";
 
                         plotMeCoreManager.removePlot(world, id);
-                        PlotMeCoreManager.removeOwnerSign(world, id);
-                        PlotMeCoreManager.removeSellSign(world, id);
+                        plotMeCoreManager.removeOwnerSign(world, id);
+                        plotMeCoreManager.removeSellSign(world, id);
 
-                        sqlmanager.deletePlot(PlotMeCoreManager.getIdX(id), PlotMeCoreManager.getIdZ(id), world.getName());
+                        sqlmanager.deletePlot(plotMeCoreManager.getIdX(id), plotMeCoreManager.getIdZ(id), world.getName());
 
                         //noinspection NumericCastThatLosesPrecision
                         plugin.setCounterExpired((short) (plugin.getCounterExpired() - 1));

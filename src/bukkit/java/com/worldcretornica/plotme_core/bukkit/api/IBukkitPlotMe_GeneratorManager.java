@@ -5,6 +5,8 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 
+import com.worldcretornica.schematic.Schematic;
+
 import java.util.List;
 import java.util.Map;
 
@@ -16,9 +18,9 @@ public interface IBukkitPlotMe_GeneratorManager {
 
     List<Player> getPlayersInPlot(String id);
 
-    void fillroad(String id1, String id2, World world);
+    void fillRoad(String id1, String id2, World world);
 
-    void fillmiddleroad(String id1, String id2, World world);
+    void fillMiddleRoad(String id1, String id2, World world);
 
     void setOwnerDisplay(World world, String id, String line1, String line2, String line3, String line4);
 
@@ -72,12 +74,15 @@ public interface IBukkitPlotMe_GeneratorManager {
 
     boolean isValidId(String id);
 
-    boolean createConfig(String worldname, Map<String, String> args);
+    boolean createConfig(String worldName, Map<String, String> args);
 
     Map<String, String> getDefaultGenerationConfig();
 
-    int getPlotSize(String worldname);
+    int getPlotSize(String worldName);
 
-    int getRoadHeight(String worldname);
+    int getRoadHeight(String worldName);
 
+    Location getPlotMiddle(World world, String id);
+    
+    Schematic getPlotSchematic(World world, String id);
 }

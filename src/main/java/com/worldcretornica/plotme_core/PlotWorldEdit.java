@@ -9,23 +9,19 @@ import com.sk89q.worldedit.function.mask.RegionMask;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.world.World;
 import com.worldcretornica.plotme_core.api.IPlayer;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
-import org.bukkit.Location;
+import com.worldcretornica.plotme_core.bukkit.api.*;
+import org.bukkit.*;
 
 public class PlotWorldEdit {
 
-    private final PlotMe_Core plugin;
     private final WorldEditPlugin worldEdit;
 
-    public PlotWorldEdit(PlotMe_Core instance, WorldEditPlugin worldEditPlugin) {
-        plugin = instance;
+    public PlotWorldEdit(WorldEditPlugin worldEditPlugin) {
         this.worldEdit = worldEditPlugin;
     }
 
     public void setMask(IPlayer player) {
-        String id = PlotMeCoreManager.getPlotId(player);
+        String id = PlotMeCoreManager.getInstance().getPlotId(player);
         setMask(player, id);
     }
 
@@ -39,11 +35,12 @@ public class PlotWorldEdit {
         LocalSession session = worldEdit.getSession(bukkitPlayer.getPlayer());
 
         if (!id.isEmpty()) {
-            Plot plot = plugin.getPlotMeCoreManager().getPlotById(id, player);
+            PlotMeCoreManager manager = PlotMeCoreManager.getInstance();
+            Plot plot = manager.getPlotById(id, player);
 
             if (plot != null && plot.isAllowed(player.getName(), player.getUniqueId())) {
-                bottom = (BukkitLocation) PlotMeCoreManager.getPlotBottomLoc(bukkitWorld, id);
-                top = (BukkitLocation) PlotMeCoreManager.getPlotTopLoc(bukkitWorld, id);
+                bottom = (BukkitLocation) manager.getPlotBottomLoc(bukkitWorld, id);
+                top = (BukkitLocation) manager.getPlotTopLoc(bukkitWorld, id);
 
                 LocalSession localsession = worldEdit.getSession(bukkitPlayer.getPlayer());
                 World world = localsession.getSelectionWorld();

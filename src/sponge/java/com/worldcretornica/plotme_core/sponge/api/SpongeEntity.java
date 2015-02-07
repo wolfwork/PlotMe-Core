@@ -1,19 +1,48 @@
 package com.worldcretornica.plotme_core.sponge.api;
 
+import com.worldcretornica.plotme_core.api.IEntity;
+import com.worldcretornica.plotme_core.api.ILocation;
+import com.worldcretornica.plotme_core.api.IWorld;
 import org.spongepowered.api.entity.Entity;
 
-/**
- * Created by Matthew on 1/15/2015.
- */
-public class SpongeEntity {
+import java.util.UUID;
 
-    public Entity entity;
+public class SpongeEntity implements IEntity {
+
+    public final Entity entity;
 
     public SpongeEntity(Entity entity) {
         this.entity = entity;
     }
 
-    public void setEntity(Entity entity) {
-        this.entity.getLocation().getPosition().getX();
+    @Override
+    public ILocation getLocation() {
+        return new SpongeLocation(entity.getLocation());
+    }
+
+    @Override
+    public void setLocation(ILocation location) {
+        SpongeLocation loc = null;
+        if (location instanceof SpongeLocation) {
+            loc = (SpongeLocation) location;
+        }
+        if (loc != null) {
+            entity.setLocation(loc.getLocation());
+        }
+    }
+
+    @Override
+    public IWorld getWorld() {
+        return new SpongeWorld(entity.getWorld());
+    }
+
+    @Override
+    public void remove() {
+        entity.remove();
+    }
+
+    @Override
+    public UUID getUniqueId() {
+        return entity.getUniqueId();
     }
 }

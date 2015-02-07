@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -19,27 +18,27 @@ public class CmdAdd extends PlotCommand {
     public boolean exec(IPlayer player, String[] args) {
         if (player.hasPermission(PermissionNames.ADMIN_ADD) || player.hasPermission(PermissionNames.USER_ADD)) {
             IWorld world = player.getWorld();
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(world);
-            if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-                String id = PlotMeCoreManager.getPlotId(player);
+            PlotMapInfo pmi = manager.getMap(world);
+            if (manager.isPlotWorld(world)) {
+                String id = manager.getPlotId(player);
                 if (id.isEmpty()) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!PlotMeCoreManager.isPlotAvailable(id, pmi)) {
+                } else if (!manager.isPlotAvailable(id, pmi)) {
                     if (args.length < 2) {
                         player.sendMessage(C("WordUsage") + " §c/plotme add <" + C("WordPlayer") + ">");
                     } else {
-                        Plot plot = PlotMeCoreManager.getPlotById(id, pmi);
+                        Plot plot = manager.getPlotById(id, pmi);
 
                         String allowed = args[1];
 
-                        if (plot.getOwner().equalsIgnoreCase(player.getName()) || player.hasPermission(PermissionNames.ADMIN_ADD)) {
+                        if (player.getUniqueId().equals(plot.getOwnerId()) || player.hasPermission(PermissionNames.ADMIN_ADD)) {
                             if (plot.isAllowedConsulting(allowed) || plot.isGroupAllowed(allowed)) {
                                 player.sendMessage(C("WordPlayer") + " §c" + allowed + "§r " + C("MsgAlreadyAllowed"));
                             } else {
 
                                 InternalPlotAddAllowedEvent event;
                                 double advancedPrice = 0.0;
-                                if (plugin.getPlotMeCoreManager().isEconomyEnabled(pmi)) {
+                                if (manager.isEconomyEnabled(pmi)) {
                                     double price = pmi.getAddPlayerPrice();
                                     advancedPrice = price;
                                     double balance = serverBridge.getBalance(player);
@@ -68,10 +67,15 @@ public class CmdAdd extends PlotCommand {
                                 }
 
                                 if (!event.isCancelled()) {
-                                    IPlayer allowed2 = plugin.getServerBridge().getPlayerExact(allowed);
-                                    if (allowed2 != null) {
-                                        plot.addAllowed(allowed, allowed2.getUniqueId());
-                                        plot.removeDenied(allowed2.getUniqueId());
+                                    if (!allowed.toLowerCase().startsWith("group:")) {
+                                        IPlayer allowed2 = plugin.getServerBridge().getPlayerExact(allowed);
+                                        if (allowed2 != null) {
+                                            plot.addAllowed(allowed, allowed2.getUniqueId());
+                                            plot.removeDenied(allowed2.getUniqueId());
+                                        } else {
+                                            plot.addAllowed(allowed);
+                                            plot.removeDenied(allowed);
+                                        }
                                     } else {
                                         plot.addAllowed(allowed);
                                         plot.removeDenied(allowed);

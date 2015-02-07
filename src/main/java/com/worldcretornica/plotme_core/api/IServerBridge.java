@@ -2,10 +2,12 @@ package com.worldcretornica.plotme_core.api;
 
 import com.worldcretornica.plotme_core.PlotWorldEdit;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
+
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 
-import java.io.InputStream;
+import java.io.*;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -13,11 +15,7 @@ import java.util.logging.Logger;
 
 public abstract class IServerBridge {
 
-    private boolean usinglwc;
-
-    public abstract IPlotMe_ChunkGenerator getPlotMeGenerator(String pluginname, String worldname);
-
-    public abstract IPlotMe_ChunkGenerator getPlotMeGenerator(String worldname);
+    private boolean usingLwc;
 
     public abstract IOfflinePlayer getOfflinePlayer(UUID uuid);
 
@@ -33,13 +31,13 @@ public abstract class IServerBridge {
 
     public abstract IPlayer getPlayerExact(String name);
 
-    public abstract List<IPlayer> getOnlinePlayers();
+    public abstract Collection<IPlayer> getOnlinePlayers();
 
     public abstract Logger getLogger();
 
     public abstract int scheduleSyncRepeatingTask(Runnable func, long l, long l2);
 
-    public abstract void cancelTask(int taskid);
+    public abstract void cancelTask(int taskId);
 
     public abstract int scheduleSyncDelayedTask(Runnable task, int i);
 
@@ -57,16 +55,16 @@ public abstract class IServerBridge {
 
     public abstract EconomyResponse withdrawPlayer(IPlayer player, double price);
 
-    public abstract EconomyResponse depositPlayer(IOfflinePlayer playercurrentbidder, double currentBid);
+    public abstract EconomyResponse depositPlayer(IOfflinePlayer currentBidder, double currentBid);
 
     public abstract PlotWorldEdit getPlotWorldEdit();
 
-    public boolean getUsinglwc() {
-        return usinglwc;
+    public boolean getUsingLwc() {
+        return usingLwc;
     }
 
-    public void setUsinglwc(boolean usinglwc) {
-        this.usinglwc = usinglwc;
+    public void setUsingLwc(boolean usingLwc) {
+        this.usingLwc = usingLwc;
     }
 
     /**
@@ -84,6 +82,8 @@ public abstract class IServerBridge {
     public abstract void setupListeners();
 
     public abstract void runTaskAsynchronously(Runnable runnable);
+    
+    public abstract void runTaskLaterAsynchronously(Runnable runnable, long delay);
 
     public abstract IBiome getBiome(String name);
 
@@ -101,7 +101,7 @@ public abstract class IServerBridge {
 
     public abstract void saveResource(String fileName, boolean replace);
 
-    public abstract boolean addMultiverseWorld(String worldname, String environment, String seed, String generator);
+    public abstract boolean addMultiverseWorld(String worldName, String seed, String generator);
 
     public abstract List<String> getBiomes();
 
@@ -109,12 +109,11 @@ public abstract class IServerBridge {
      * Get all Existing Plotworlds.
      * @return all plotworlds on the server
      */
-    public abstract List<IWorld> getWorlds();
+    public abstract Collection<IWorld> getWorlds();
 
-    public abstract boolean createPlotWorld(String worldname, String generator, Map<String, String> args);
+    public abstract boolean createPlotWorld(String worldName, String generator, Map<String, String> args);
 
     public abstract IMaterial getMaterial(String string);
 
     public abstract IConfigSection loadDefaultConfig(String string);
-
 }

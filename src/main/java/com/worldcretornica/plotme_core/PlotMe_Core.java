@@ -4,49 +4,62 @@ import com.worldcretornica.plotme_core.api.IConfigSection;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
+import com.worldcretornica.plotme_core.bukkit.*;
 import com.worldcretornica.plotme_core.utils.Util;
 
-import java.io.File;
+import java.io.*;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class PlotMe_Core {
 
-
     public static final String CAPTION_FILE = "captions.yml";
 
     public static final String WORLDS_CONFIG_SECTION = "worlds";
     //Bridge
     private final IServerBridge serverBridge;
+    private final AbstractSchematicUtil schematicutil;
+    private HashMap<String, IPlotMe_GeneratorManager> managers;
     private IWorld worldcurrentlyprocessingexpired;
-    private short counterexpired;
+    private short counterExpired;
     //Spool stuff
     private ConcurrentLinkedQueue<PlotToClear> plotsToClear;
     //Global variables
-    private PlotMeCoreManager plotMeCoreManager;
     private SqlManager sqlManager;
     private Util util;
 
-    public PlotMe_Core(IServerBridge serverObjectBuilder) {
-        serverBridge = serverObjectBuilder;
+    public PlotMe_Core(IServerBridge serverObjectBuilder, AbstractSchematicUtil schematicutil) {
+        this.serverBridge = serverObjectBuilder;
+        this.schematicutil = schematicutil;
+        managers = new HashMap<>();
+    }
+
+    public IPlotMe_GeneratorManager getGenManager(String name) {
+        return managers.get(name.toLowerCase());
+    }
+    
+    public AbstractSchematicUtil getSchematicUtil() {
+        return this.schematicutil;
     }
 
     public void disable() {
         getSqlManager().closeConnection();
         serverBridge.unHook();
-        plotMeCoreManager.setPlayersIgnoringWELimit(null);
+        PlotMeCoreManager.getInstance().setPlayersIgnoringWELimit(null);
         setWorldCurrentlyProcessingExpired(null);
         plotsToClear.clear();
         plotsToClear = null;
+        managers.clear();
+        managers = null;
     }
 
     public void enable() {
+        PlotMeCoreManager.getInstance().setPlugin(this);
         setupMySQL();
         setupConfig();
-        setupDefaultCaptions();
-        setPlotMeCoreManager(new PlotMeCoreManager(this));
-        setupWorlds(); // TODO: Remove concept of pmi so this is not needed
+        setupDefaultCaptions();        
         serverBridge.setupCommands();
         setUtil(new Util(this));
         serverBridge.setupHooks();
@@ -62,14 +75,38 @@ public class PlotMe_Core {
         reloadCaptionConfig();
         setupDefaultCaptions();
         setupMySQL();
-        getPlotMeCoreManager().getPlotMaps().clear();
-        setupWorlds();
+        PlotMeCoreManager.getInstance().getPlotMaps().clear();
+        
+        for (String worldname : managers.keySet()) {
+            setupWorld(worldname.toLowerCase());
+        }
     }
-
 
     public Logger getLogger() {
         return serverBridge.getLogger();
     }
+
+    /*private void setupWorlds() {
+        IConfigSection worldsCS = serverBridge.getConfig().getConfigurationSection(WORLDS_CONFIG_SECTION);
+        for (String world : worldsCS.getKeys(false)) {
+            String worldName = world.toLowerCase();
+            if (getGenManager(worldName) == null) {
+                getLogger().log(Level.SEVERE, "The world {0} either does not exist or not using a PlotMe generator", world);
+                getLogger().log(Level.SEVERE, "Please ensure that {0} is set up and that it is using a PlotMe generator", world);
+            } else {
+                PlotMapInfo pmi = new PlotMapInfo(this, worldName);
+                //Lets just hide a bit of code to clean up the config in here.
+                IConfigSection config = getServerBridge().loadDefaultConfig("worlds." + world);
+                config.set("BottomBlockId", null);
+                config.set("AutoLinkPlots", null);
+                plotMeCoreManager.addPlotMap(worldName, pmi);
+            }
+        }
+        if (getPlotMeCoreManager().getPlotMaps().isEmpty()) {
+            getLogger().severe("Uh oh. There are no plotworlds setup.");
+            getLogger().severe("Is that a mistake? Try making sure you setup PlotMe Correctly PlotMe to stay safe.");
+        }
+    }*/
 
     private void setupConfig() {
         // Get the config we will be working with
@@ -80,7 +117,6 @@ public class PlotMe_Core {
         if (!(config.contains(WORLDS_CONFIG_SECTION) && !config.getConfigurationSection(WORLDS_CONFIG_SECTION).getKeys(false).isEmpty())) {
             new PlotMapInfo(this, "plotworld");
         }
-
         // Do any config validation
         if (config.getInt("NbClearSpools") > 100) {
             getLogger().warning("Having more than 100 clear spools seems drastic, changing to 100");
@@ -94,28 +130,25 @@ public class PlotMe_Core {
         config.saveConfig();
     }
 
-    private void setupWorlds() {
-        IConfigSection worldsCS = serverBridge.getConfig().getConfigurationSection(WORLDS_CONFIG_SECTION);
-        for (String world : worldsCS.getKeys(false)) {
-            String worldname = world.toLowerCase();
-            if (getGenManager(worldname) == null) {
-                getLogger().log(Level.SEVERE, "The world {0} either does not exist or not using a PlotMe generator", world);
-                getLogger().log(Level.SEVERE, "Please ensure that {0} is set up and that it is using a PlotMe generator", world);
-            } else {
-                PlotMapInfo pmi = new PlotMapInfo(this, worldname);
-                //Lets just hide a bit of code to clean up the config in here.
-                IConfigSection config = getServerBridge().loadDefaultConfig("worlds." + world);
-                config.set("BottomBlockId", null);
-                config.set("AutoLinkPlots", null);
-                plotMeCoreManager.addPlotMap(worldname, pmi);
-            }
+    private void setupWorld(String worldname) {
+        if (getGenManager(worldname) == null) {
+            getLogger().log(Level.SEVERE, "The world {0} either does not exist or not using a PlotMe generator", worldname);
+            getLogger().log(Level.SEVERE, "Please ensure that {0} is set up and that it is using a PlotMe generator", worldname);
+        } else {
+            PlotMapInfo pmi = new PlotMapInfo(this, worldname);
+            //Lets just hide a bit of code to clean up the config in here.
+            IConfigSection config = getServerBridge().loadDefaultConfig("worlds." + worldname.toLowerCase());
+            config.set("BottomBlockId", null);
+            config.set("AutoLinkPlots", null);
+            config.saveConfig();
+            PlotMeCoreManager.getInstance().addPlotMap(worldname, pmi);
         }
-        if (getPlotMeCoreManager().getPlotMaps().isEmpty()) {
+
+        if (PlotMeCoreManager.getInstance().getPlotMaps().isEmpty()) {
             getLogger().severe("Uh oh. There are no plotworlds setup.");
             getLogger().severe("Is that a mistake? Try making sure you setup PlotMe Correctly PlotMe to stay safe.");
         }
     }
-
 
     public IConfigSection getCaptionConfig() {
         return serverBridge.getConfig(CAPTION_FILE);
@@ -150,6 +183,7 @@ public class PlotMe_Core {
         if (!newCaptionFile.exists()) {
             getServerBridge().saveResource(CAPTION_FILE, true);
         }
+        serverBridge.getConfig(CAPTION_FILE).set("MsgCannotDenyOwner", "You can''t deny the owner of the plot.");
     }
 
     /**
@@ -169,16 +203,14 @@ public class PlotMe_Core {
         plotsToClear = new ConcurrentLinkedQueue<>();
     }
 
-
-    public IPlotMe_GeneratorManager getGenManager(String name) {
-        IWorld world = serverBridge.getWorld(name.toLowerCase());
-        if (world == null) {
-            return null;
-        } else {
-            return PlotMeCoreManager.getGenManager(world);
-        }
+    public void addManager(String world, IPlotMe_GeneratorManager manager) {
+        managers.put(world.toLowerCase(), manager);
+        setupWorld(world.toLowerCase());
     }
 
+    public IPlotMe_GeneratorManager removeManager(String world) {
+        return managers.remove(world);
+    }
 
     public void scheduleTask(Runnable task) {
         getLogger().info(util.C("MsgStartDeleteSession"));
@@ -197,26 +229,26 @@ public class PlotMe_Core {
     }
 
     public short getCounterExpired() {
-        return counterexpired;
+        return counterExpired;
     }
 
-    public void setCounterExpired(short counterexpired) {
-        this.counterexpired = counterexpired;
+    public void setCounterExpired(short counterExpired) {
+        this.counterExpired = counterExpired;
     }
 
     public void addPlotToClear(PlotToClear plotToClear) {
         plotsToClear.offer(plotToClear);
-
-        Runnable pms = new PlotMeSpool(this, plotToClear);
-        serverBridge.scheduleSyncRepeatingTask(pms, 0L, 200L);
+        getLogger().info("plot to clear add " + plotToClear.getPlotId());
+        PlotMeSpool pms = new PlotMeSpool(this, plotToClear);
+        pms.setTaskId(serverBridge.scheduleSyncRepeatingTask(pms, 0L, 60L));
     }
 
-    public void removePlotToClear(PlotToClear plotToClear, int taskid) {
+    public void removePlotToClear(PlotToClear plotToClear, int taskId) {
         plotsToClear.remove(plotToClear);
 
-        serverBridge.cancelTask(taskid);
+        serverBridge.cancelTask(taskId);
+        getLogger().info("removed taskid " + taskId);
     }
-
 
     public PlotToClear getPlotLocked(String world, String id) {
         for (PlotToClear ptc : plotsToClear.toArray(new PlotToClear[plotsToClear.size()])) {
@@ -228,20 +260,9 @@ public class PlotMe_Core {
         return null;
     }
 
-
-    public PlotMeCoreManager getPlotMeCoreManager() {
-        return plotMeCoreManager;
-    }
-
-    private void setPlotMeCoreManager(PlotMeCoreManager plotMeCoreManager) {
-        this.plotMeCoreManager = plotMeCoreManager;
-    }
-
-
     public IServerBridge getServerBridge() {
         return serverBridge;
     }
-
 
     public SqlManager getSqlManager() {
         return sqlManager;
@@ -251,7 +272,6 @@ public class PlotMe_Core {
         this.sqlManager = sqlManager;
     }
 
-
     public Util getUtil() {
         return util;
     }
@@ -259,5 +279,9 @@ public class PlotMe_Core {
     private void setUtil(Util util) {
         this.util = util;
     }
-
+    
+    @Deprecated
+    public PlotMeCoreManager getPlotMeCoreManager() {
+        return PlotMeCoreManager.getInstance();
+    }
 }

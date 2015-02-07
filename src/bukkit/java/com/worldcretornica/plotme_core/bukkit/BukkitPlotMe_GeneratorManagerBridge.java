@@ -10,6 +10,8 @@ import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
 import com.worldcretornica.plotme_core.bukkit.api.IBukkitPlotMe_GeneratorManager;
+import com.worldcretornica.schematic.Schematic;
+
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -46,13 +48,13 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public void fillroad(String id1, String id2, IWorld world) {
-        generatorManager.fillroad(id1, id2, ((BukkitWorld) world).getWorld());
+    public void fillRoad(String id1, String id2, IWorld world) {
+        generatorManager.fillRoad(id1, id2, ((BukkitWorld) world).getWorld());
     }
 
     @Override
-    public void fillmiddleroad(String id1, String id2, IWorld world) {
-        generatorManager.fillmiddleroad(id1, id2, ((BukkitWorld) world).getWorld());
+    public void fillMiddleRoad(String id1, String id2, IWorld world) {
+        generatorManager.fillMiddleRoad(id1, id2, ((BukkitWorld) world).getWorld());
     }
 
     @Override
@@ -141,13 +143,13 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public void adjustPlotFor(IWorld world, String id, boolean claimed, boolean protect, boolean auctionned, boolean forSale) {
-        generatorManager.adjustPlotFor(((BukkitWorld) world).getWorld(), id, claimed, protect, auctionned, forSale);
+    public void adjustPlotFor(IWorld world, String id, boolean claimed, boolean protect, boolean auctioned, boolean forSale) {
+        generatorManager.adjustPlotFor(((BukkitWorld) world).getWorld(), id, claimed, protect, auctioned, forSale);
     }
 
     @Override
-    public boolean isBlockInPlot(String id, ILocation location) {
-        return generatorManager.isBlockInPlot(id, ((BukkitLocation) location).getLocation());
+    public boolean isBlockInPlot(String id, ILocation blockLocation) {
+        return generatorManager.isBlockInPlot(id, ((BukkitLocation) blockLocation).getLocation());
     }
 
     @Override
@@ -186,8 +188,8 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public boolean createConfig(String worldname, Map<String, String> args) {
-        return generatorManager.createConfig(worldname, args);
+    public boolean createConfig(String worldName, Map<String, String> args) {
+        return generatorManager.createConfig(worldName, args);
     }
 
     @Override
@@ -196,13 +198,22 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public int getPlotSize(String worldname) {
-        return generatorManager.getPlotSize(worldname);
+    public int getPlotSize(String worldName) {
+        return generatorManager.getPlotSize(worldName);
     }
 
     @Override
-    public int getRoadHeight(String worldname) {
-        return generatorManager.getRoadHeight(worldname);
+    public int getRoadHeight(String worldName) {
+        return generatorManager.getRoadHeight(worldName);
     }
 
+    @Override
+    public ILocation getPlotMiddle(IWorld world, String id) {
+        return new BukkitLocation(generatorManager.getPlotMiddle(((BukkitWorld) world).getWorld(), id));
+    }
+    
+    @Override
+    public Schematic getPlotSchematic(IWorld world, String id) {
+        return generatorManager.getPlotSchematic(((BukkitWorld) world).getWorld(), id);
+    }
 }

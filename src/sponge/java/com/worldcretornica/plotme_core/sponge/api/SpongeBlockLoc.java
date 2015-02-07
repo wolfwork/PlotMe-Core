@@ -5,15 +5,14 @@ import com.worldcretornica.plotme_core.api.IBlock;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IWorld;
 import org.spongepowered.api.block.BlockLoc;
+import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.biome.BiomeTypes;
 
-/**
- * Created by Matthew on 1/15/2015.
- */
-public class SpongeBlock implements IBlock {
+public class SpongeBlockLoc implements IBlock {
 
     private final BlockLoc block;
 
-    public SpongeBlock(BlockLoc block) {
+    public SpongeBlockLoc(BlockLoc block) {
         this.block = block;
     }
 
@@ -24,7 +23,7 @@ public class SpongeBlock implements IBlock {
 
     @Override
     public IWorld getWorld() {
-        return null;
+        return new SpongeWorld((World) block.getExtent());
     }
 
     @Override
@@ -34,8 +33,7 @@ public class SpongeBlock implements IBlock {
 
     @Override
     public int getY() {
-        return block.getY()
-                ;
+        return block.getY();
     }
 
     @Override
@@ -45,7 +43,7 @@ public class SpongeBlock implements IBlock {
 
     @Override
     public int getTypeId() {
-        return 0;
+        return 0; //block.getType().getId();
     }
 
     @Override
@@ -55,7 +53,7 @@ public class SpongeBlock implements IBlock {
 
     @Override
     public void setBiome(IBiome biome) {
-
+        block.getExtent().setBiome(block.getPosition(), BiomeTypes.PLAINS); //TODO: Placeholder to set the biome to Plains
     }
 
     @Override
@@ -70,6 +68,5 @@ public class SpongeBlock implements IBlock {
 
     @Override
     public void setTypeId(int id, boolean applyPhysics) {
-
     }
 }

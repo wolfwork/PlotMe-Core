@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 
-@SuppressWarnings("SameReturnValue")
 public class CmdReload extends PlotCommand {
 
     public CmdReload(PlotMe_Core instance) {
@@ -16,7 +15,7 @@ public class CmdReload extends PlotCommand {
             serverBridge.getEventFactory().callPlotReloadEvent();
 
             plugin.reload();
-            serverBridge.getLogger().info(C("MsgReloadedSuccess"));
+            sender.sendMessage(C("MsgReloadedSuccess"));
 
             return true;
         } else {

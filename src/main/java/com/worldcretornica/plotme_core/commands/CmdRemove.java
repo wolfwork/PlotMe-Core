@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -21,27 +20,27 @@ public class CmdRemove extends PlotCommand {
     public boolean exec(IPlayer player, String[] args) {
         if (player.hasPermission(PermissionNames.ADMIN_REMOVE) || player.hasPermission(PermissionNames.USER_REMOVE)) {
             IWorld world = player.getWorld();
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(world);
-            if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-                String id = PlotMeCoreManager.getPlotId(player);
+            PlotMapInfo pmi = manager.getMap(world);
+            if (manager.isPlotWorld(world)) {
+                String id = manager.getPlotId(player);
                 if (id.isEmpty()) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!PlotMeCoreManager.isPlotAvailable(id, pmi)) {
+                } else if (!manager.isPlotAvailable(id, pmi)) {
                     if (args.length < 2 || args[1].isEmpty()) {
                         player.sendMessage(C("WordUsage") + ": §c/plotme remove <" + C("WordPlayer") + ">");
                     } else {
-                        Plot plot = PlotMeCoreManager.getPlotById(id, pmi);
-                        UUID playeruuid = player.getUniqueId();
+                        Plot plot = manager.getPlotById(id, pmi);
+                        UUID playerUniqueId = player.getUniqueId();
                         String allowed = args[1];
 
-                        if (plot.getOwnerId().equals(playeruuid) || player.hasPermission(PermissionNames.ADMIN_REMOVE)) {
+                        if (plot.getOwnerId().equals(playerUniqueId) || player.hasPermission(PermissionNames.ADMIN_REMOVE)) {
                             if (plot.isAllowedConsulting(allowed) || plot.isGroupAllowed(allowed)) {
 
                                 double price = 0.0;
 
                                 InternalPlotRemoveAllowedEvent event;
 
-                                if (plugin.getPlotMeCoreManager().isEconomyEnabled(pmi)) {
+                                if (manager.isEconomyEnabled(pmi)) {
                                     price = pmi.getRemovePlayerPrice();
                                     double balance = serverBridge.getBalance(player);
 
@@ -71,9 +70,8 @@ public class CmdRemove extends PlotCommand {
                                 if (!event.isCancelled()) {
                                     plot.removeAllowed(allowed);
 
-                                    double price1 = -price;
                                     player.sendMessage(
-                                            C("WordPlayer") + " §c" + allowed + "§r " + C("WordRemoved") + ". " + Util().moneyFormat(price1, true));
+                                            C("WordPlayer") + " §c" + allowed + "§r " + C("WordRemoved") + ". " + Util().moneyFormat(-price, true));
 
                                     if (isAdvancedLogging()) {
                                         serverBridge.getLogger()

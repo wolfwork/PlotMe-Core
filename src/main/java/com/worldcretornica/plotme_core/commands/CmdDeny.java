@@ -3,7 +3,6 @@ package com.worldcretornica.plotme_core.commands;
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -21,22 +20,21 @@ public class CmdDeny extends PlotCommand {
     public boolean exec(IPlayer player, String[] args) {
         if (player.hasPermission(PermissionNames.ADMIN_DENY) || player.hasPermission(PermissionNames.USER_DENY)) {
             IWorld world = player.getWorld();
-            PlotMapInfo pmi = plugin.getPlotMeCoreManager().getMap(world);
-            if (plugin.getPlotMeCoreManager().isPlotWorld(world)) {
-                String id = PlotMeCoreManager.getPlotId(player);
+            PlotMapInfo pmi = manager.getMap(world);
+            if (manager.isPlotWorld(world)) {
+                String id = manager.getPlotId(player);
                 if (id.isEmpty()) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!PlotMeCoreManager.isPlotAvailable(id, pmi)) {
+                } else if (!manager.isPlotAvailable(id, pmi)) {
                     if (args.length < 2 || args[1].isEmpty()) {
                         player.sendMessage(C("WordUsage") + " §c/plotme deny <" + C("WordPlayer") + ">");
                     } else {
-                        Plot plot = PlotMeCoreManager.getPlotById(id, pmi);
-                        String playername = player.getName();
+                        Plot plot = manager.getPlotById(id, pmi);
                         String denied = args[1];
 
-                        if (plot.getOwner().equalsIgnoreCase(playername) || player.hasPermission(PermissionNames.ADMIN_DENY)) {
+                        if (player.getUniqueId().equals(plot.getOwnerId()) || player.hasPermission(PermissionNames.ADMIN_DENY)) {
                             if (plot.getOwner().equalsIgnoreCase(denied)) {
-                                //TODO output something using a caption that says like "Cannot deny owner"
+                                player.sendMessage(C("MsgCannotDenyOwner"));
                                 return true;
                             }
 
@@ -48,7 +46,7 @@ public class CmdDeny extends PlotCommand {
 
                                 InternalPlotAddDeniedEvent event;
 
-                                if (plugin.getPlotMeCoreManager().isEconomyEnabled(pmi)) {
+                                if (manager.isEconomyEnabled(pmi)) {
                                     price = pmi.getDenyPlayerPrice();
                                     double balance = serverBridge.getBalance(player);
 
@@ -80,38 +78,39 @@ public class CmdDeny extends PlotCommand {
                                     plot.removeAllowed(denied);
 
                                     if ("*".equals(denied)) {
-                                        List<IPlayer> deniedplayers = PlotMeCoreManager.getPlayersInPlot(world, id);
+                                        List<IPlayer> playersInPlot = manager.getPlayersInPlot(world, id);
 
-                                        for (IPlayer deniedplayer : deniedplayers) {
-                                            if (!plot.isAllowed(deniedplayer.getName(), deniedplayer.getUniqueId())) {
-                                                deniedplayer.setLocation(PlotMeCoreManager.getPlotHome(world, plot.getId()));
+                                        for (IPlayer iPlayer : playersInPlot) {
+                                            if (!plot.isAllowed(iPlayer.getName(), iPlayer.getUniqueId())) {
+                                                iPlayer.setLocation(manager.getPlotHome(world, plot.getId()));
                                             }
                                         }
                                     } else {
-                                        IPlayer deniedplayer = serverBridge.getPlayerExact(denied);
+                                        IPlayer deniedPlayer = serverBridge.getPlayerExact(denied);
 
-                                        if (deniedplayer != null) {
-                                            if (deniedplayer.getWorld().equals(world)) {
-                                                String deniedid = PlotMeCoreManager.getPlotId(deniedplayer);
+                                        if (deniedPlayer != null) {
+                                            if (deniedPlayer.getWorld().equals(world)) {
+                                                String plotId = manager.getPlotId(deniedPlayer);
 
-                                                if (deniedid.equalsIgnoreCase(id)) {
-                                                    deniedplayer.setLocation(PlotMeCoreManager.getPlotHome(world, plot.getId()));
+                                                if (plotId.equalsIgnoreCase(id)) {
+                                                    deniedPlayer.setLocation(manager.getPlotHome(world, plot.getId()));
                                                 }
                                             }
                                         }
                                     }
 
-                                    double price1 = -price;
                                     player.sendMessage(
-                                            C("WordPlayer") + " §c" + denied + "§r " + C("MsgNowDenied") + " " + Util().moneyFormat(price1, true));
+                                            C("WordPlayer") + " §c" + denied + "§r " + C("MsgNowDenied") + " " + Util().moneyFormat(-price, true));
 
                                     if (isAdvancedLogging()) {
                                         if (price == 0) {
                                             serverBridge.getLogger()
-                                                    .info(playername + " " + C("MsgDeniedPlayer") + " " + denied + " " + C("MsgToPlot") + " " + id);
+                                                    .info(player.getName() + " " + C("MsgDeniedPlayer") + " " + denied + " " + C("MsgToPlot") + " "
+                                                          + id);
                                         } else {
                                             serverBridge.getLogger()
-                                                    .info(playername + " " + C("MsgDeniedPlayer") + " " + denied + " " + C("MsgToPlot") + " " + id + (
+                                                    .info(player.getName() + " " + C("MsgDeniedPlayer") + " " + denied + " " + C("MsgToPlot") + " "
+                                                          + id + (
                                                             " " + C("WordFor") + " " + price));
                                         }
                                     }

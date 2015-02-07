@@ -2,53 +2,32 @@ package com.worldcretornica.plotme_core.bukkit;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotWorldEdit;
 import com.worldcretornica.plotme_core.api.IBiome;
 import com.worldcretornica.plotme_core.api.IConfigSection;
 import com.worldcretornica.plotme_core.api.IMaterial;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
-import com.worldcretornica.plotme_core.api.IPlotMe_ChunkGenerator;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitConfigSection;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitMaterial;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitOfflinePlayer;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
-import com.worldcretornica.plotme_core.bukkit.api.IBukkitPlotMe_ChunkGenerator;
-import com.worldcretornica.plotme_core.bukkit.event.BukkitEventFactory;
-import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotDenyListener;
-import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotListener;
-import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotWorldEditListener;
+import com.worldcretornica.plotme_core.bukkit.api.*;
+import com.worldcretornica.plotme_core.bukkit.event.*;
+import com.worldcretornica.plotme_core.bukkit.listener.*;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
-import org.bukkit.World.Environment;
-import org.bukkit.block.Biome;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.*;
+import org.bukkit.block.*;
+import org.bukkit.configuration.*;
+import org.bukkit.configuration.file.*;
+import org.bukkit.entity.*;
+import org.bukkit.plugin.*;
+import org.bukkit.plugin.java.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -58,14 +37,14 @@ import java.util.logging.Logger;
 public class BukkitServerBridge extends IServerBridge {
 
     private final PlotMe_CorePlugin plugin;
-    private final IEventFactory eventfactory;
+    private final IEventFactory eventFactory;
     private Economy economy;
     private PlotWorldEdit plotworldedit;
     private MultiverseWrapper multiverse;
 
     public BukkitServerBridge(PlotMe_CorePlugin instance) {
         plugin = instance;
-        eventfactory = new BukkitEventFactory();
+        eventFactory = new BukkitEventFactory();
     }
 
     private static MultiverseWrapper getMultiverseWrapper() {
@@ -102,8 +81,8 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-    public void cancelTask(int taskid) {
-        Bukkit.getScheduler().cancelTask(taskid);
+    public void cancelTask(int taskId) {
+        Bukkit.getScheduler().cancelTask(taskId);
     }
 
     @Override
@@ -124,21 +103,24 @@ public class BukkitServerBridge extends IServerBridge {
 
         if (pluginManager.getPlugin("WorldEdit") != null) {
 
-            PlotMe_Core plotMeCore = plugin.getAPI();
             WorldEditPlugin worldEdit = (WorldEditPlugin) pluginManager.getPlugin("WorldEdit");
-            PlotWorldEdit we = null;
-            try {
-                we = new PlotWorldEdit(plotMeCore, worldEdit);
-                setPlotWorldEdit(we);
-            } catch (SecurityException | IllegalArgumentException unused) {
-                getLogger().warning("Unable to hook to WorldEdit properly, please contact the developper of plotme with your WorldEdit version.");
-                setPlotWorldEdit(null);
-            }
+            if (worldEdit.getDescription().getVersion().startsWith("6")) {
+                PlotWorldEdit we = null;
+                try {
+                    we = new PlotWorldEdit(worldEdit);
+                    setPlotWorldEdit(we);
+                } catch (SecurityException | IllegalArgumentException unused) {
+                    getLogger().warning("Unable to hook to WorldEdit properly, please contact the developer of plotme with your WorldEdit version.");
+                    setPlotWorldEdit(null);
+                }
 
-            pluginManager.registerEvents(new BukkitPlotWorldEditListener(we, plugin), plugin);
+                pluginManager.registerEvents(new BukkitPlotWorldEditListener(we, plugin), plugin);
+            } else {
+                getLogger().warning("You are using an unsupported version of worldedit. The PlotMe WorldEdit Listener not be enabled.");
+            }
         }
 
-        setUsinglwc(pluginManager.getPlugin("LWC") != null);
+        setUsingLwc(pluginManager.getPlugin("LWC") != null);
     }
 
     /**
@@ -193,8 +175,7 @@ public class BukkitServerBridge extends IServerBridge {
     public void setupListeners() {
         PluginManager pm = plugin.getServer().getPluginManager();
 
-        pm.registerEvents(new BukkitPlotListener(plugin.getAPI()), plugin);
-
+        pm.registerEvents(new BukkitPlotListener(plugin), plugin);
         pm.registerEvents(new BukkitPlotDenyListener(plugin), plugin);
 
     }
@@ -202,6 +183,11 @@ public class BukkitServerBridge extends IServerBridge {
     @Override
     public void runTaskAsynchronously(Runnable runnable) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable);
+    }
+
+    @Override
+    public void runTaskLaterAsynchronously(Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, runnable, delay);
     }
 
     @Override
@@ -227,7 +213,7 @@ public class BukkitServerBridge extends IServerBridge {
         if (player == null) {
             return null;
         } else {
-            return new BukkitPlayer(player);
+            return plugin.wrapPlayer(player);
         }
     }
 
@@ -244,7 +230,7 @@ public class BukkitServerBridge extends IServerBridge {
         if (player == null) {
             return null;
         } else {
-            return new BukkitPlayer(player);
+            return plugin.wrapPlayer(player);
         }
     }
 
@@ -259,7 +245,7 @@ public class BukkitServerBridge extends IServerBridge {
     @Override
 
     public IEventFactory getEventFactory() {
-        return eventfactory;
+        return eventFactory;
     }
 
     @Override
@@ -281,11 +267,11 @@ public class BukkitServerBridge extends IServerBridge {
     @Override
     public IConfigSection getConfig(String file) {
 
-        File configfile = new File(plugin.getDataFolder().getAbsolutePath(), file);
+        File configFile = new File(plugin.getDataFolder().getAbsolutePath(), file);
         YamlConfiguration config = new YamlConfiguration();
 
         try {
-            config.load(configfile);
+            config.load(configFile);
         } catch (FileNotFoundException ignored) {
         } catch (IOException e) {
             plugin.getLogger().severe("Can't read configuration file");
@@ -304,22 +290,8 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-    public IPlotMe_ChunkGenerator getPlotMeGenerator(String pluginname, String worldname) {
-        if (Bukkit.getPluginManager().isPluginEnabled(pluginname)) {
-            Plugin genplugin = Bukkit.getPluginManager().getPlugin(pluginname);
-            if (genplugin != null) {
-                ChunkGenerator gen = genplugin.getDefaultWorldGenerator(worldname, "");
-                if (gen instanceof IBukkitPlotMe_ChunkGenerator) {
-                    return new BukkitPlotMe_ChunkGeneratorBridge((IBukkitPlotMe_ChunkGenerator) gen);
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public boolean addMultiverseWorld(String worldname, String environment, String seed, String generator) {
-        return getMultiverseWrapper().getMVWorldManager().addWorld(worldname, Environment.valueOf(environment), seed, generator);
+    public boolean addMultiverseWorld(String worldName, String seed, String generator) {
+        return getMultiverseWrapper().getMVWorldManager().addWorld(worldName, seed, generator);
     }
 
     @Override
@@ -334,16 +306,16 @@ public class BukkitServerBridge extends IServerBridge {
 
     @Override
 
-    public EconomyResponse depositPlayer(IOfflinePlayer player, double currentBid) {
-        return getEconomy().depositPlayer(((BukkitOfflinePlayer) player).getOfflinePlayer(), currentBid);
+    public EconomyResponse depositPlayer(IOfflinePlayer currentBidder, double currentBid) {
+        return getEconomy().depositPlayer(((BukkitOfflinePlayer) currentBidder).getOfflinePlayer(), currentBid);
     }
 
     @Override
-    public List<IPlayer> getOnlinePlayers() {
-        List<IPlayer> players = new ArrayList<>();
+    public Collection<IPlayer> getOnlinePlayers() {
+        Collection<IPlayer> players = new ArrayList<>();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            players.add(new BukkitPlayer(player));
+            players.add(plugin.wrapPlayer(player));
         }
 
         return players;
@@ -359,19 +331,7 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-    public IPlotMe_ChunkGenerator getPlotMeGenerator(String worldname) {
-        World world = Bukkit.getWorld(worldname);
-        if (world != null) {
-            ChunkGenerator generator = world.getGenerator();
-            if (generator instanceof IPlotMe_ChunkGenerator) {
-                return (IPlotMe_ChunkGenerator) generator;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public List<IWorld> getWorlds() {
+    public Collection<IWorld> getWorlds() {
         List<IWorld> worlds = new ArrayList<>();
 
         for (World world : Bukkit.getWorlds()) {
@@ -383,13 +343,13 @@ public class BukkitServerBridge extends IServerBridge {
 
     /**
      * Please do not use this method if you need to create a plotworld
-     * @param worldname Name of the Plotworld
+     * @param worldName Name of the Plotworld
      * @param generator PlotMe Generator
      * @param args
      * @return
      */
     @Override
-    public boolean createPlotWorld(String worldname, String generator, Map<String, String> args) {
+    public boolean createPlotWorld(String worldName, String generator, Map<String, String> args) {
         //Get a seed
         Long seed = new Random().nextLong();
 
@@ -407,20 +367,20 @@ public class BukkitServerBridge extends IServerBridge {
         }
 
         //Find generator
-        IPlotMe_ChunkGenerator plotMeGenerator = plugin.getServerObjectBuilder().getPlotMeGenerator(generator, worldname);
+       /* IPlotMe_ChunkGenerator plotMeGenerator = plugin.getServerObjectBuilder().getPlotMeGenerator(generator, worldName);
 
         //Make generator create settings
         if (plotMeGenerator == null) {
             getLogger().info(plugin.getAPI().getUtil().C("ErrCannotFindWorldGen") + " '" + generator + "'");
             return false;
         }
-        if (!plotMeGenerator.getManager().createConfig(worldname, args)) { //Create the generator configurations
+        if (!plotMeGenerator.getManager().createConfig(worldName, args)) { //Create the generator configurations
             getLogger().info(plugin.getAPI().getUtil().C("ErrCannotCreateGen1") + " '" + generator + "' " + plugin.getAPI().getUtil()
                     .C("ErrCannotCreateGen2"));
             return false;
-        }
+        }*/
 
-        PlotMapInfo tempPlotInfo = new PlotMapInfo(plugin.getAPI(), worldname);
+        PlotMapInfo tempPlotInfo = new PlotMapInfo(plugin.getAPI(), worldName);
 
         tempPlotInfo.setPlotAutoLimit(Integer.parseInt(args.get("PlotAutoLimit")));
         tempPlotInfo.setDaysToExpiration(Integer.parseInt(args.get("DaysToExpiration")));
@@ -444,13 +404,13 @@ public class BukkitServerBridge extends IServerBridge {
         tempPlotInfo.setProtectPrice(Double.parseDouble(args.get("ProtectPrice")));
         tempPlotInfo.setDisposePrice(Double.parseDouble(args.get("DisposePrice")));
 
-        plugin.getAPI().getPlotMeCoreManager().addPlotMap(worldname, tempPlotInfo);
+        PlotMeCoreManager.getInstance().addPlotMap(worldName, tempPlotInfo);
 
         //Are we using multiverse?
         if (getMultiverse() != null) {
             boolean success = false;
             if (getMultiverse().isEnabled()) {
-                success = plugin.getServerObjectBuilder().addMultiverseWorld(worldname, "NORMAL", seed.toString(), generator);
+                success = plugin.getServerObjectBuilder().addMultiverseWorld(worldName, seed.toString(), generator);
 
                 if (!success) {
                     getLogger().info(plugin.getAPI().getUtil().C("ErrCannotCreateMV"));
@@ -503,5 +463,9 @@ public class BukkitServerBridge extends IServerBridge {
             isr = new InputStreamReader(defConfigStream);
         }
         return YamlConfiguration.loadConfiguration(isr);
+    }
+
+    public void clearBukkitPlayerMap() {
+        plugin.getBukkitPlayerMap().clear();
     }
 }
