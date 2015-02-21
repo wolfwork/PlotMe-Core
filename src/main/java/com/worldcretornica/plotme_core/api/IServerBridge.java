@@ -2,11 +2,10 @@ package com.worldcretornica.plotme_core.api;
 
 import com.worldcretornica.plotme_core.PlotWorldEdit;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
-
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,7 @@ public abstract class IServerBridge {
 
     public abstract void cancelTask(int taskId);
 
-    public abstract int scheduleSyncDelayedTask(Runnable task, int i);
+    public abstract void scheduleSyncDelayedTask(Runnable task, int i);
 
     public abstract void setupHooks();
 
@@ -82,7 +81,7 @@ public abstract class IServerBridge {
     public abstract void setupListeners();
 
     public abstract void runTaskAsynchronously(Runnable runnable);
-    
+
     public abstract void runTaskLaterAsynchronously(Runnable runnable, long delay);
 
     public abstract IBiome getBiome(String name);

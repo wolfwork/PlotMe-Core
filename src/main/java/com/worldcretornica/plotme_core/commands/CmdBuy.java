@@ -2,6 +2,7 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -20,9 +21,9 @@ public class CmdBuy extends PlotCommand {
         if (manager.isPlotWorld(world)) {
             if (manager.isEconomyEnabled(world)) {
                 if (player.hasPermission(PermissionNames.USER_BUY) || player.hasPermission("PlotMe.admin.buy")) {
-                    String id = manager.getPlotId(player);
+                    PlotId id = manager.getPlotId(player);
 
-                    if (id.isEmpty()) {
+                    if (id == null) {
                         player.sendMessage("§c" + C("MsgNoPlotFound"));
                     } else if (!manager.isPlotAvailable(id, world)) {
                         Plot plot = manager.getPlotById(id, world);
@@ -35,12 +36,12 @@ public class CmdBuy extends PlotCommand {
                             } else {
                                 int plotLimit = getPlotLimit(player);
 
-                                short plotsOwned = manager.getNbOwnedPlot(player.getUniqueId(), world.getName().toLowerCase());
-                                
+                                int plotsOwned = manager.getNbOwnedPlot(player.getUniqueId(), world.getName().toLowerCase());
+
                                 if (plotLimit != -1 && plotsOwned >= plotLimit) {
                                     player.sendMessage(C("MsgAlreadyReachedMaxPlots") + " ("
-                                                       + plotsOwned + "/" + getPlotLimit(player) + "). "
-                                                       + C("WordUse") + " §c/plotme home§r " + C("MsgToGetToIt"));
+                                            + plotsOwned + "/" + getPlotLimit(player) + "). "
+                                            + C("WordUse") + " §c/plotme home§r " + C("MsgToGetToIt"));
                                 } else {
 
                                     double cost = plot.getCustomPrice();
@@ -71,7 +72,7 @@ public class CmdBuy extends PlotCommand {
                                                         for (IPlayer onlinePlayers : serverBridge.getOnlinePlayers()) {
                                                             if (onlinePlayers.getName().equalsIgnoreCase(oldOwner)) {
                                                                 onlinePlayers.sendMessage(C("WordPlot") + " " + id + " "
-                                                                                          + C("MsgSoldTo") + " " + buyer + ". " + Util()
+                                                                        + C("MsgSoldTo") + " " + buyer + ". " + Util()
                                                                         .moneyFormat(cost, true));
                                                                 break;
                                                             }
@@ -83,10 +84,12 @@ public class CmdBuy extends PlotCommand {
                                                 }
 
                                                 plot.setOwner(buyer);
+                                                plot.setOwnerId(player.getUniqueId());
                                                 plot.setCustomPrice(0.0);
                                                 plot.setForSale(false);
 
                                                 plot.updateField("owner", buyer);
+                                                plot.updateField("ownerid", player.getUniqueId());
                                                 plot.updateField("customprice", 0);
                                                 plot.updateField("forsale", false);
 

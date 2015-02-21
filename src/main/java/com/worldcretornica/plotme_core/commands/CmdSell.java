@@ -2,6 +2,7 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -22,9 +23,9 @@ public class CmdSell extends PlotCommand {
 
                 if (pmi.isCanPutOnSale()) {
                     if (player.hasPermission(PermissionNames.USER_SELL) || player.hasPermission(PermissionNames.ADMIN_SELL)) {
-                        String id = manager.getPlotId(player);
+                        PlotId id = manager.getPlotId(player);
 
-                        if (id.isEmpty()) {
+                        if (id == null) {
                             player.sendMessage("§c" + C("MsgNoPlotFound"));
                         } else if (!manager.isPlotAvailable(id, pmi)) {
                             Plot plot = manager.getPlotById(id, pmi);
@@ -68,7 +69,7 @@ public class CmdSell extends PlotCommand {
                                         } catch (Exception e) {
                                             player.sendMessage(
                                                     C("WordUsage") + ": §c /plotme sell <" + C("WordAmount") + ">§r " + C("WordExample")
-                                                    + ": §c/plotme sell 200");
+                                                            + ": §c/plotme sell 200");
                                             return true;
                                         }
                                     }
@@ -93,7 +94,7 @@ public class CmdSell extends PlotCommand {
                                             if (isAdvancedLogging()) {
                                                 serverBridge.getLogger()
                                                         .info(player.getName() + " " + C("MsgPutOnSalePlot") + " " + id + " " + C("WordFor") + " "
-                                                              + price);
+                                                                + price);
                                             }
                                         }
                                     }

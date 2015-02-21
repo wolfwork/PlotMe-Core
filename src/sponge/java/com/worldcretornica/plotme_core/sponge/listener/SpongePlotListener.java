@@ -1,13 +1,18 @@
-package com.worldcretornica.plotme_core.sponge;
+package com.worldcretornica.plotme_core.sponge.listener;
 
+import com.worldcretornica.plotme_core.PermissionNames;
+import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
-import com.worldcretornica.plotme_core.sponge.api.*;
+import com.worldcretornica.plotme_core.PlotToClear;
+import com.worldcretornica.plotme_core.sponge.PlotMe_Sponge;
+import com.worldcretornica.plotme_core.sponge.api.SpongeLocation;
+import com.worldcretornica.plotme_core.sponge.api.SpongeWorld;
 import org.spongepowered.api.entity.player.Player;
 import org.spongepowered.api.entity.projectile.source.ProjectileSource;
 import org.spongepowered.api.event.block.BlockBurnEvent;
-import org.spongepowered.api.event.block.BlockChangeEvent;
 import org.spongepowered.api.event.block.BlockDispenseEvent;
 import org.spongepowered.api.event.block.BlockIgniteEvent;
 import org.spongepowered.api.event.block.BlockInteractEvent;
@@ -18,6 +23,7 @@ import org.spongepowered.api.event.block.FloraGrowEvent;
 import org.spongepowered.api.event.block.FluidSpreadEvent;
 import org.spongepowered.api.event.block.LeafDecayEvent;
 import org.spongepowered.api.event.entity.ProjectileLaunchEvent;
+import org.spongepowered.api.event.entity.living.player.PlayerChangeBlockEvent;
 import org.spongepowered.api.event.entity.living.player.PlayerInteractEvent;
 import org.spongepowered.api.util.event.Subscribe;
 
@@ -25,15 +31,53 @@ public class SpongePlotListener {
 
     private final PlotMe_Sponge plugin;
     private final PlotMe_Core api;
+    private final PlotMeCoreManager manager;
 
     public SpongePlotListener(PlotMe_Sponge instance) {
         api = instance.getAPI();
         this.plugin = instance;
+        manager = PlotMeCoreManager.getInstance();
     }
 
+    //This event is triggered for both placing and breaking blocks.
     @Subscribe
-    public void onBlockBreak(BlockChangeEvent event) {
-        //TODO
+    public void onBlockChange(PlayerChangeBlockEvent event) {
+        SpongeLocation location = new SpongeLocation(event.getBlock().getLocation());
+        if (manager.isPlotWorld(location)) {
+            PlotId id = manager.getPlotId(location);
+            Player player = event.getPlayer();
+            boolean cannotBuild = !player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE);
+            if (id == null) {
+                event.setCancelled(true);
+            } else {
+                PlotToClear ptc = api.getPlotLocked(location.getWorld().getName(), id);
+                if (ptc != null) {
+                    switch (ptc.getReason()) {
+                        case Clear:
+                            player.sendMessage(api.getUtil().C("MsgPlotLockedClear"));
+                            break;
+                        case Reset:
+                            player.sendMessage(api.getUtil().C("MsgPlotLockedReset"));
+                            break;
+                        case Expired:
+                            player.sendMessage(api.getUtil().C("MsgPlotLockedExpired"));
+                            break;
+                    }
+                    event.setCancelled(true);
+                } else {
+                    Plot plot = manager.getMap(location).getPlot(id);
+
+                    if (plot == null || !plot.isAllowed(player.getName(), player.getUniqueId())) {
+                        if (cannotBuild) {
+                            player.sendMessage(api.getUtil().C("ErrCannotBuild"));
+                            event.setCancelled(true);
+                        }
+                    } else {
+                        plot.resetExpire(manager.getMap(location).getDaysToExpiration());
+                    }
+                }
+            }
+        }
     }
 
     @Subscribe
@@ -48,7 +92,6 @@ public class SpongePlotListener {
 
     @Subscribe
     public void onBlockIgniteEvent(BlockIgniteEvent event) {
-        //TODO
     }
 
     @Subscribe
@@ -99,11 +142,11 @@ public class SpongePlotListener {
             ProjectileSource source = event.getSource().orNull();
             if (source != null) {
                 if (source instanceof Player) {
-                    //TODO Send message to player
+                    //noinspection OverlyStrongTypeCast
+                    ((Player) source).sendMessage("");
+                    event.getLaunchedProjectile().remove();
                 }
             }
-        } else {
-            return;
         }
     }
 }

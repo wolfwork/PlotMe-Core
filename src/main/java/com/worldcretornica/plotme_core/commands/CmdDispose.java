@@ -2,6 +2,7 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
@@ -21,8 +22,8 @@ public class CmdDispose extends PlotCommand {
             IWorld world = player.getWorld();
             PlotMapInfo pmi = manager.getMap(world);
             if (manager.isPlotWorld(world)) {
-                String id = manager.getPlotId(player);
-                if (id.isEmpty()) {
+                PlotId id = manager.getPlotId(player);
+                if (id == null) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
                 } else if (!manager.isPlotAvailable(id, pmi)) {
                     Plot plot = manager.getPlotById(id, pmi);
@@ -91,8 +92,8 @@ public class CmdDispose extends PlotCommand {
                                 manager.removeSellSign(world, id);
                                 manager.removeAuctionSign(world, id);
 
-                                plugin.getSqlManager().deletePlot(manager.getIdX(id), manager.getIdZ(id), world.getName());
-
+                                plugin.getSqlManager().deletePlot(id, world.getName());
+                                manager.adjustWall(world, id, false);
                                 player.sendMessage(C("MsgPlotDisposedAnyoneClaim"));
 
                                 if (isAdvancedLogging()) {

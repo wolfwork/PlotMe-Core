@@ -2,15 +2,23 @@ package com.worldcretornica.plotme_core.bukkit.listener;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.PlotWorldEdit;
-import com.worldcretornica.plotme_core.bukkit.*;
-import com.worldcretornica.plotme_core.bukkit.api.*;
-import org.bukkit.*;
-import org.bukkit.event.*;
-import org.bukkit.event.block.*;
-import org.bukkit.event.player.*;
+import com.worldcretornica.plotme_core.bukkit.PlotMe_CorePlugin;
+import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
+import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
+import org.bukkit.Material;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class BukkitPlotWorldEditListener implements Listener {
 
@@ -37,16 +45,19 @@ public class BukkitPlotWorldEditListener implements Listener {
 
         BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
 
-        String idTo = "";
+        PlotId idTo = null;
 
         boolean changeMask = false;
         if (!from.getWorld().getName().equalsIgnoreCase(to.getWorld().getName())) {
             changeMask = true;
         } else if (from.getLocation() != to.getLocation()) {
-            String idFrom = manager.getPlotId(from);
+            PlotId idFrom = manager.getPlotId(from);
             idTo = manager.getPlotId(to);
-
-            if (!idFrom.equals(idTo)) {
+            if (idFrom != null) {
+                if (!idFrom.equals(idTo)) {
+                    changeMask = true;
+                }
+            } else if (idTo != null) {
                 changeMask = true;
             }
         }
@@ -65,10 +76,10 @@ public class BukkitPlotWorldEditListener implements Listener {
         BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
 
         if (manager.isPlotWorld(player)) {
-            if (manager.isPlayerIgnoringWELimit(player)) {
-                worldEdit.removeMask(player);
-            } else {
+            if (!manager.isPlayerIgnoringWELimit(player)) {
                 worldEdit.setMask(player);
+            } else {
+                worldEdit.removeMask(player);
             }
         } else {
             worldEdit.removeMask(player);
@@ -80,23 +91,7 @@ public class BukkitPlotWorldEditListener implements Listener {
         BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
         BukkitLocation from = new BukkitLocation(event.getFrom());
         BukkitLocation to = new BukkitLocation(event.getTo());
-        if (manager.isPlotWorld(from)) {
-            if (manager.isPlotWorld(to)) {
-                worldEdit.setMask(player);
-            } else {
-                worldEdit.removeMask(player);
-            }
-        } else if (manager.isPlotWorld(to)) {
-            worldEdit.setMask(player);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerPortal(PlayerPortalEvent event) {
-        BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
-        BukkitLocation from = new BukkitLocation(event.getFrom());
-        BukkitLocation to = new BukkitLocation(event.getTo());
-        if (event.getFrom() == null|| event.getTo() == null) {
+        if (event.getFrom() == null || event.getTo() == null) {
             return;
         }
         if (manager.isPlotWorld(from)) {
@@ -135,20 +130,19 @@ public class BukkitPlotWorldEditListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
         BukkitLocation location = new BukkitLocation(event.getClickedBlock().getLocation());
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (manager.isPlotWorld(player)) {
+                if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE) && !manager.isPlayerIgnoringWELimit(player) && event.getItem() != null
+                        && event.getItem().getType() != Material.AIR) {
+                    PlotId id = manager.getPlotId(location);
+                    Plot plot = manager.getMap(location).getPlot(id);
 
-        if (manager.isPlotWorld(location)) {
-            if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE) &&
-                !manager.isPlayerIgnoringWELimit(player) &&
-                (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK)
-                && event.getItem() != null && event.getItem().getType() != Material.AIR) {
-                String id = manager.getPlotId(location);
-                Plot plot = manager.getMap(location).getPlot(id);
-
-                if (plot != null && plot.isAllowed(player.getName(), player.getUniqueId())) {
-                    worldEdit.setMask(player);
-                } else {
-                    player.sendMessage(api.getUtil().C("ErrCannotBuild"));
-                    event.setCancelled(true);
+                    if (plot != null && plot.isAllowed(player.getName(), player.getUniqueId())) {
+                        worldEdit.setMask(player);
+                    } else {
+                        player.sendMessage(api.getUtil().C("ErrCannotBuild"));
+                        event.setCancelled(true);
+                    }
                 }
             }
         }

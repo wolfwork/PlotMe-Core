@@ -4,7 +4,7 @@
 
     <groupId>com.worldcretornica</groupId>
     <artifactId>PlotMe-Core</artifactId>
-    <version>0.16.1-SNAPSHOT</version>
+    <version>0.17-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>PlotMe-Core</name>
@@ -207,6 +207,18 @@
                     <groupId>org.bukkit</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ninja.leaping.configurate</groupId>
+            <artifactId>configurate-yaml</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

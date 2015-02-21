@@ -1,17 +1,19 @@
 package com.worldcretornica.plotme_core.utils;
 
 import com.google.common.collect.ImmutableList;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,14 +38,14 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
         this(names, true);
     }
 
-    private static void writeBody(HttpURLConnection connection, String body) throws Exception {
-        OutputStream stream = connection.getOutputStream();
-        stream.write(body.getBytes());
-        stream.flush();
-        stream.close();
+    private static void writeBody(HttpURLConnection connection, String body) throws IOException {
+        try (OutputStream stream = connection.getOutputStream()) {
+            stream.write(body.getBytes());
+            stream.flush();
+        }
     }
 
-    private static HttpURLConnection createConnection() throws Exception {
+    private static HttpURLConnection createConnection() throws IOException {
         URL url = new URL(PROFILE_URL);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
@@ -53,8 +55,8 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
         connection.setDoOutput(true);
         return connection;
     }
-    
-    private static HttpURLConnection createAtTimeConnection(String username) throws Exception {
+
+    private static HttpURLConnection createAtTimeConnection(String username) throws IOException {
         URL url = new URL(PROFILE_AT_TIME_URL.replace("@USERNAME@", username));
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
@@ -88,19 +90,19 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
     }
 
     public static UUID getUUIDOf(String name) {
-        return new UUIDFetcher(Arrays.asList(name)).call().get(name.toLowerCase());
+        return new UUIDFetcher(Collections.singletonList(name)).call().get(name.toLowerCase());
     }
 
     @Override
     public Map<String, UUID> call() {
         Map<String, UUID> uuidMap = new HashMap<>();
         int requests = (int) Math.ceil(names.size() / PROFILES_PER_REQUEST);
-        int retries = 0;
-        
+        //        int retries = 0;
+
         for (int i = 0; i < requests; i++) {
-            
+
             List<String> missinguuid = new ArrayList<>();
-            
+
             //First step, get people that didn't change name
             boolean success = false;
             while (!success) {
@@ -117,50 +119,49 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                         UUID uuid = UUIDFetcher.getUUID(id);
                         uuidMap.put(name.toLowerCase(), uuid);
                     }
-                    
-                    for(String name : sublist) {
+
+                    for (String name : sublist) {
                         if (!uuidMap.containsKey(name)) {
                             missinguuid.add(name);
                         }
                     }
-                    
+
                     success = true;
-                } catch(Exception ex) {
-                    ex.printStackTrace();
+                } catch (Exception ex) {
                     try {
                         //If we got an exception, retry in 30 seconds
-                        Thread.sleep(30000L);
+                        Thread.sleep(90000L);
                     } catch (InterruptedException ignored) {
                     }
-                    if (retries > 0 && retries % 10 == 0) {
-                        //Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + " times to get UUIDs.");
-                    }
-                    retries += 1;
+                    //                    if (retries > 0 && retries % 10 == 0) {
+                    //                        //Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + " times to get UUIDs
+                    // .");
+                    //                    }
+                    //                    retries += 1;
                 }
             }
-            
+
             //Step 2, check people that changed name since Febuary 2nd
             if (!missinguuid.isEmpty()) {
                 for (String name : missinguuid) {
                     success = false;
                     while (!success) {
                         HttpURLConnection connection = null;
-                        
+
                         try {
                             connection = createAtTimeConnection(name);
-                        } catch(Exception ex) {
-                            //ex.printStackTrace();
+                        } catch (Exception ex) {
                             try {
                                 //If we got an exception, retry in 30 seconds
-                                Thread.sleep(30000L);
+                                Thread.sleep(90000L);
                             } catch (InterruptedException ignored) {
                             }
-                            if (retries > 0 && retries % 20 == 0) {
-                                //Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + " times to get UUIDs.");
-                            }
-                            retries += 1;
+                            //                            if (retries > 0 && retries % 20 == 0) {
+                            //                                Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + " times to get UUIDs.");
+                            //                            }
+                            //                            retries += 1;
                         }
-                        
+
                         if (connection != null) {
                             try {
                                 JSONObject jsonProfile = (JSONObject) jsonParser.parse(new InputStreamReader(connection.getInputStream()));
@@ -168,7 +169,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                                 String newname = (String) jsonProfile.get("name");
                                 UUID uuid = UUIDFetcher.getUUID(id);
                                 uuidMap.put(name.toLowerCase() + ";" + newname, uuid);
-                            } catch(Exception ex) {
+                            } catch (IOException | ParseException ex) {
                                 //Unable to find name at mojang...
                                 uuidMap.put(name.toLowerCase() + ";", null);
                             }
@@ -180,15 +181,15 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                     }
                 }
             }
-            
+
             if (rateLimiting && i != requests - 1) {
                 try {
                     Thread.sleep(1100L);
                 } catch (InterruptedException ignored) {
                 }
             }
-            
-            retries = 0;
+
+            //            retries = 0;
         }
         return uuidMap;
     }

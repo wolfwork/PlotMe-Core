@@ -1,7 +1,6 @@
 package com.worldcretornica.plotme_core.bukkit.event;
 
 import com.worldcretornica.plotme_core.Plot;
-import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotTeleportHomeEvent;
@@ -17,14 +16,14 @@ public class PlotTeleportHomeEvent extends PlotEvent implements Cancellable {
 
     private final InternalPlotTeleportHomeEvent event;
 
-    public PlotTeleportHomeEvent(PlotMe_Core instance, World world, Plot plot, Player player) {
-        super(instance, plot, world);
-        event = new InternalPlotTeleportHomeEvent(instance, new BukkitWorld(world), plot, new BukkitPlayer(player));
+    public PlotTeleportHomeEvent(World world, Plot plot, Player player) {
+        super(plot, world);
+        event = new InternalPlotTeleportHomeEvent(new BukkitWorld(world), plot, new BukkitPlayer(player));
     }
 
-    public PlotTeleportHomeEvent(PlotMe_Core instance, IWorld world, Plot plot, IPlayer player) {
-        super(instance, plot, world);
-        event = new InternalPlotTeleportHomeEvent(instance, world, plot, player);
+    public PlotTeleportHomeEvent(IWorld world, Plot plot, IPlayer player) {
+        super(plot, world);
+        event = new InternalPlotTeleportHomeEvent(world, plot, player);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.worldcretornica.plotme_core.bukkit.event;
 
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
-import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotCreateEvent;
@@ -17,14 +17,14 @@ public class PlotCreateEvent extends PlotEvent implements Cancellable {
 
     private final InternalPlotCreateEvent event;
 
-    public PlotCreateEvent(PlotMe_Core instance, World world, String plotId, Player creator) {
-        super(instance, null, world);
-        event = new InternalPlotCreateEvent(instance, new BukkitWorld(world), plotId, new BukkitPlayer(creator));
+    public PlotCreateEvent(World world, PlotId plotId, Player creator) {
+        super(null, world);
+        event = new InternalPlotCreateEvent(new BukkitWorld(world), plotId, new BukkitPlayer(creator));
     }
 
-    public PlotCreateEvent(PlotMe_Core instance, IWorld world, String plotId, IPlayer creator) {
-        super(instance, null, world);
-        event = new InternalPlotCreateEvent(instance, world, plotId, creator);
+    public PlotCreateEvent(IWorld world, PlotId plotId, IPlayer creator) {
+        super(null, world);
+        event = new InternalPlotCreateEvent(world, plotId, creator);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class PlotCreateEvent extends PlotEvent implements Cancellable {
         event.setCanceled(cancel);
     }
 
-    public String getPlotId() {
+    public PlotId getPlotId() {
         return event.getPlotId();
     }
 

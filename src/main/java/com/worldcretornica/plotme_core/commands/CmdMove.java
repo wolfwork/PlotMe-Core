@@ -1,6 +1,7 @@
 package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -18,24 +19,26 @@ public class CmdMove extends PlotCommand {
                 player.sendMessage("§c" + C("MsgNotPlotWorld"));
             } else if (args.length < 3 || args[1].isEmpty() || args[2].isEmpty()) {
                 player.sendMessage(C("WordUsage") + ": §c/plotme move <" + C("WordIdFrom") + "> <" + C("WordIdTo") + "> §r" + C("WordExample")
-                                   + ": §c/plotme move 0;1 2;-1");
+                        + ": §c/plotme move 0;1 2;-1");
             } else {
                 String plot1 = args[1];
                 String plot2 = args[2];
-                if(plot1.equals(plot2)) {
+                if (plot1.equals(plot2)) {
                     player.sendMessage(C("WordUsage") + ": §c/plotme move <" + C("WordIdFrom") + "> <" + C("WordIdTo") + "> §r" + C("WordExample")
-                                       + ": §c/plotme move 0;1 2;-1");
+                            + ": §c/plotme move 0;1 2;-1");
                     return true;
                 }
                 IWorld world = player.getWorld();
 
                 if (!manager.isValidId(world, plot1) || !manager.isValidId(world, plot2)) {
                     player.sendMessage(C("WordUsage") + ": §c/plotme move <" + C("WordIdFrom") + "> <" + C("WordIdTo") + "> §r" + C("WordExample")
-                                       + ": §c/plotme move 0;1 2;-1");
+                            + ": §c/plotme move 0;1 2;-1");
                 } else {
-                    InternalPlotMoveEvent event = serverBridge.getEventFactory().callPlotMoveEvent(plugin, world, plot1, plot2, player);
+                    PlotId id1 = new PlotId(plot1);
+                    PlotId id2 = new PlotId(plot2);
+                    InternalPlotMoveEvent event = serverBridge.getEventFactory().callPlotMoveEvent(plugin, world, id1, id2, player);
                     if (!event.isCancelled()) {
-                        if (manager.movePlot(world, plot1, plot2)) {
+                        if (manager.movePlot(world, id1, id2)) {
                             player.sendMessage(C("MsgPlotMovedSuccess"));
 
                             serverBridge.getLogger()

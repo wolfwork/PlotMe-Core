@@ -2,12 +2,13 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotBiomeChangeEvent;
-import com.worldcretornica.plotme_core.bukkit.api.*;
+import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 public class CmdBiome extends PlotCommand {
@@ -21,7 +22,7 @@ public class CmdBiome extends PlotCommand {
             IWorld world = player.getWorld();
             PlotMapInfo pmi = manager.getMap(world);
             if (manager.isPlotWorld(world)) {
-                String id = manager.getPlotId(player);
+                PlotId id = manager.getPlotId(player);
                 if (!manager.isPlotAvailable(id, pmi)) {
 
                     if (args.length == 2) {
@@ -78,10 +79,10 @@ public class CmdBiome extends PlotCommand {
                                 if (isAdvancedLogging()) {
                                     if (price == 0) {
                                         serverBridge.getLogger().info(playerName + " " + C("MsgChangedBiome") + " " + id + " " + C("WordTo") + " "
-                                                                      + biomeName);
+                                                + biomeName);
                                     } else {
                                         serverBridge.getLogger().info(playerName + " " + C("MsgChangedBiome") + " " + id + " " + C("WordTo") + " "
-                                                                      + biomeName + (" " + C("WordFor") + " " + price));
+                                                + biomeName + (" " + C("WordFor") + " " + price));
                                     }
                                 }
                             }
@@ -89,7 +90,7 @@ public class CmdBiome extends PlotCommand {
                             player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgNotYoursNotAllowedBiome"));
                         }
                     }
-                } else if (id.isEmpty()) {
+                } else if (id == null) {
                     player.sendMessage("§c" + C("MsgNoPlotFound"));
                 } else {
                     player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));

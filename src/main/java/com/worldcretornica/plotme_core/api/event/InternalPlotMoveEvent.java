@@ -1,22 +1,22 @@
 package com.worldcretornica.plotme_core.api.event;
 
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
-import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 
 public class InternalPlotMoveEvent extends InternalPlotEvent implements ICancellable {
 
-    private final String fromId;
-    private final String toId;
+    private final PlotId fromId;
+    private final PlotId toId;
     private final IWorld world;
     private final IPlayer mover;
     private boolean canceled;
 
-    public InternalPlotMoveEvent(PlotMe_Core instance, IWorld world, String fromId, String toId, IPlayer mover) {
-        super(instance, null, world);
+    public InternalPlotMoveEvent(IWorld world, PlotId fromId, PlotId toId, IPlayer mover) {
+        super(null, world);
         this.fromId = fromId;
         this.toId = toId;
         this.world = world;
@@ -46,11 +46,11 @@ public class InternalPlotMoveEvent extends InternalPlotEvent implements ICancell
         return mover;
     }
 
-    public String getId() {
+    public PlotId getId() {
         return fromId;
     }
 
-    public String getIdTo() {
+    public PlotId getIdTo() {
         return toId;
     }
 

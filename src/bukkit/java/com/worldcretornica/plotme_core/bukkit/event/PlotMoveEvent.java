@@ -1,8 +1,8 @@
 package com.worldcretornica.plotme_core.bukkit.event;
 
 import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
-import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotMoveEvent;
@@ -18,14 +18,14 @@ public class PlotMoveEvent extends PlotEvent implements Cancellable {
 
     private final InternalPlotMoveEvent event;
 
-    public PlotMoveEvent(PlotMe_Core instance, World world, String fromId, String toId, Player mover) {
-        super(instance, null, world);
-        event = new InternalPlotMoveEvent(instance, new BukkitWorld(world), fromId, toId, new BukkitPlayer(mover));
+    public PlotMoveEvent(World world, PlotId fromId, PlotId toId, Player mover) {
+        super(null, world);
+        event = new InternalPlotMoveEvent(new BukkitWorld(world), fromId, toId, new BukkitPlayer(mover));
     }
 
-    public PlotMoveEvent(PlotMe_Core instance, IWorld world, String fromId, String toId, IPlayer mover) {
-        super(instance, null, world);
-        event = new InternalPlotMoveEvent(instance, world, fromId, toId, mover);
+    public PlotMoveEvent(IWorld world, PlotId fromId, PlotId toId, IPlayer mover) {
+        super(null, world);
+        event = new InternalPlotMoveEvent(world, fromId, toId, mover);
     }
 
     @Override
@@ -51,11 +51,11 @@ public class PlotMoveEvent extends PlotEvent implements Cancellable {
         return ((BukkitPlayer) event.getPlayer()).getPlayer();
     }
 
-    public String getId() {
+    public PlotId getId() {
         return event.getId();
     }
 
-    public String getIdTo() {
+    public PlotId getIdTo() {
         return event.getIdTo();
     }
 

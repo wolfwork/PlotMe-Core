@@ -9,17 +9,16 @@ import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
-import com.worldcretornica.plotme_core.bukkit.event.*;
-import com.worldcretornica.plotme_core.sponge.api.*;
-
+import com.worldcretornica.plotme_core.bukkit.event.BukkitEventFactory;
+import com.worldcretornica.plotme_core.sponge.api.SpongePlayer;
+import com.worldcretornica.plotme_core.sponge.api.SpongeWorld;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
-
 import org.spongepowered.api.entity.player.Player;
 import org.spongepowered.api.service.command.CommandService;
 import org.spongepowered.api.world.World;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -98,9 +97,8 @@ public class SpongeServerBridge extends IServerBridge {
     }
 
     @Override
-    public int scheduleSyncDelayedTask(Runnable task, int i) {
+    public void scheduleSyncDelayedTask(Runnable task, int i) {
         // TODO Auto-generated method stub
-        return 0;
     }
 
     @Override
@@ -265,7 +263,7 @@ public class SpongeServerBridge extends IServerBridge {
     @Override
     public void runTaskLaterAsynchronously(Runnable runnable, long delay) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }
