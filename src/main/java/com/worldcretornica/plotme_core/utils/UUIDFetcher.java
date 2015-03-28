@@ -100,7 +100,6 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
         //        int retries = 0;
 
         for (int i = 0; i < requests; i++) {
-
             List<String> missinguuid = new ArrayList<>();
 
             //First step, get people that didn't change name
@@ -127,7 +126,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                     }
 
                     success = true;
-                } catch (Exception ex) {
+                } catch (ParseException | IOException e) {
                     try {
                         //If we got an exception, retry in 30 seconds
                         Thread.sleep(90000L);
@@ -138,6 +137,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                     // .");
                     //                    }
                     //                    retries += 1;
+
                 }
             }
 
@@ -150,16 +150,18 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
 
                         try {
                             connection = createAtTimeConnection(name);
-                        } catch (Exception ex) {
+                        } catch (IOException e) {
                             try {
                                 //If we got an exception, retry in 30 seconds
                                 Thread.sleep(90000L);
                             } catch (InterruptedException ignored) {
                             }
                             //                            if (retries > 0 && retries % 20 == 0) {
-                            //                                Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + " times to get UUIDs.");
+                            //                                Bukkit.getLogger().warning("The UUID fetcher has been trying for " + retries + "
+                            // times to get UUIDs.");
                             //                            }
                             //                            retries += 1;
+
                         }
 
                         if (connection != null) {
@@ -188,7 +190,6 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                 } catch (InterruptedException ignored) {
                 }
             }
-
             //            retries = 0;
         }
         return uuidMap;

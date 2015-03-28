@@ -1,15 +1,31 @@
 package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 
 public class CmdCreateWorld extends PlotCommand {
 
     public CmdCreateWorld(PlotMe_Core instance) {
         super(instance);
     }
+
+    @Override
+    public String getName() {
+        return "createworld";
+    }
+
+    @Override
+    public boolean execute(ICommandSender sender, String[] args) {
+        return false;
+    }
+
+    @Override
+    public String getUsage() {
+        return null;
+    }
 /*
 
-    public boolean exec(ICommandSender sender, String[] args) {
+    public boolean execute(ICommandSender sender, String[] args) {
         if (plugin.creationbuffer.containsKey(sender.getName())) {
             if (args.length == 1) {
                 //try to create world
@@ -37,7 +53,7 @@ public class CmdCreateWorld extends PlotCommand {
                                     parameters.remove(ckey);
                                     parameters.put(ckey, value);
 
-                                    sender.sendMessage(C("MsgSettingChanged") + " §a" + ckey + "§r=§b" + value);
+                                    sender.sendMessage(C("MsgSettingChanged") + " " + ckey + "=" + value);
 
                                     return true;
                                 }
@@ -57,7 +73,7 @@ public class CmdCreateWorld extends PlotCommand {
         } else {
             //Usage
             if (args.length == 1) {
-                sender.sendMessage(C("WordUsage") + ": §c/plotme createworld <" + C("WordWorld") + "> [" + C("WordGenerator") + "]");
+                sender.sendMessage(C("WordUsage") + ": /plotme createworld <" + C("WordWorld") + "> [" + C("WordGenerator") + "]");
                 sender.sendMessage(C("MsgCreateWorldHelp"));
             } else {
 
@@ -101,7 +117,6 @@ public class CmdCreateWorld extends PlotCommand {
                 parameters.put("DaysToExpiration", "7");
                 parameters.put("ProtectedWallBlockId", "44:4");
                 parameters.put("ForSaleWallBlockId", "44:1");
-                parameters.put("AuctionWallBlockId", "44:1");
                 parameters.put("AutoLinkPlots", "true");
                 parameters.put("DisableExplosion", "true");
                 parameters.put("DisableIgnition", "true");
@@ -153,7 +168,7 @@ public class CmdCreateWorld extends PlotCommand {
                 buffer = " ";
             }
 
-            buffer += "§a" + key + "§r=§b" + parameters.get(key) + "  ";
+            buffer += key + "=" + parameters.get(key) + "  ";
         }
         cs.sendMessage(buffer);
     }

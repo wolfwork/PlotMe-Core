@@ -2,6 +2,7 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 
 import java.util.List;
@@ -12,7 +13,12 @@ public class CmdBiomes extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player, String[] args) {
+    public String getName() {
+        return "biomes";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         if (manager.isPlotWorld(player)) {
             if (player.hasPermission(PermissionNames.USER_BIOME)) {
                 List<String> biomes = serverBridge.getBiomes();
@@ -21,10 +27,7 @@ public class CmdBiomes extends PlotCommand {
                 int page = 1;
 
                 if (args.length > 1) {
-                    try {
-                        page = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException ignored) {
-                    }
+                    page = Integer.parseInt(args[1]);
                 }
 
                 player.sendMessage(C("WordBiomes") + " (" + page + "/" + pages + ") : ");
@@ -33,14 +36,19 @@ public class CmdBiomes extends PlotCommand {
                     if (biomes.size() <= ctr + (page - 1) * 19) {
                         return true;
                     } else {
-                        player.sendMessage("  §b" + biomes.get(ctr + (page - 1) * 19));
+                        player.sendMessage("  " + biomes.get(ctr + (page - 1) * 19));
                     }
                 }
             } else {
-                player.sendMessage("§c" + C("MsgPermissionDenied"));
                 return false;
             }
         }
         return true;
     }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme biomes";
+    }
+
 }

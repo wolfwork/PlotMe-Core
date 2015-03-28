@@ -4,6 +4,7 @@ import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -16,7 +17,12 @@ public class CmdBuy extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player) {
+    public String getName() {
+        return "buy";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         IWorld world = player.getWorld();
         if (manager.isPlotWorld(world)) {
             if (manager.isEconomyEnabled(world)) {
@@ -24,7 +30,8 @@ public class CmdBuy extends PlotCommand {
                     PlotId id = manager.getPlotId(player);
 
                     if (id == null) {
-                        player.sendMessage("§c" + C("MsgNoPlotFound"));
+                        player.sendMessage(C("MsgNoPlotFound"));
+                        return true;
                     } else if (!manager.isPlotAvailable(id, world)) {
                         Plot plot = manager.getPlotById(id, world);
 
@@ -32,60 +39,52 @@ public class CmdBuy extends PlotCommand {
                             String buyer = player.getName();
 
                             if (player.getUniqueId().equals(plot.getOwnerId())) {
-                                player.sendMessage("§c" + C("MsgCannotBuyOwnPlot"));
+                                player.sendMessage(C("MsgCannotBuyOwnPlot"));
                             } else {
                                 int plotLimit = getPlotLimit(player);
 
-                                int plotsOwned = manager.getNbOwnedPlot(player.getUniqueId(), world.getName().toLowerCase());
+                                int plotsOwned = manager.getOwnedPlotCount(player.getUniqueId(), world.getName().toLowerCase());
 
                                 if (plotLimit != -1 && plotsOwned >= plotLimit) {
                                     player.sendMessage(C("MsgAlreadyReachedMaxPlots") + " ("
                                             + plotsOwned + "/" + getPlotLimit(player) + "). "
-                                            + C("WordUse") + " §c/plotme home§r " + C("MsgToGetToIt"));
+                                            + C("WordUse") + " /plotme home " + C("MsgToGetToIt"));
                                 } else {
-
-                                    double cost = plot.getCustomPrice();
+                                    double cost = plot.getPrice();
 
                                     if (serverBridge.getBalance(player) < cost) {
-                                        player.sendMessage("§c" + C("MsgNotEnoughBuy"));
+                                        player.sendMessage(C("MsgNotEnoughBuy"));
                                     } else {
-
-                                        InternalPlotBuyEvent
-                                                event =
-                                                serverBridge.getEventFactory().callPlotBuyEvent(plugin, world, plot, player, cost);
+                                        InternalPlotBuyEvent event = serverBridge.getEventFactory().callPlotBuyEvent(world, plot, player, cost);
 
                                         if (!event.isCancelled()) {
                                             EconomyResponse er = serverBridge.withdrawPlayer(player, cost);
 
                                             if (er.transactionSuccess()) {
                                                 String oldOwner = plot.getOwner();
-                                                IOfflinePlayer currentbidder = null;
 
-                                                if (plot.getOwnerId() != null) {
-                                                    currentbidder = serverBridge.getOfflinePlayer(plot.getOwnerId());
-                                                }
+                                                IOfflinePlayer currBuyer = serverBridge.getOfflinePlayer(plot.getOwnerId());
 
-                                                if (currentbidder != null) {
-                                                    EconomyResponse er2 = serverBridge.depositPlayer(currentbidder, cost);
+                                                if (currBuyer != null) {
+                                                    EconomyResponse er2 = serverBridge.depositPlayer(currBuyer, cost);
 
                                                     if (er2.transactionSuccess()) {
                                                         for (IPlayer onlinePlayers : serverBridge.getOnlinePlayers()) {
                                                             if (onlinePlayers.getName().equalsIgnoreCase(oldOwner)) {
                                                                 onlinePlayers.sendMessage(C("WordPlot") + " " + id + " "
-                                                                        + C("MsgSoldTo") + " " + buyer + ". " + Util()
-                                                                        .moneyFormat(cost, true));
+                                                                        + C("MsgSoldTo") + " " + buyer + ". " + plugin.moneyFormat(cost, true));
                                                                 break;
                                                             }
                                                         }
                                                     } else {
-                                                        player.sendMessage("§c" + er2.errorMessage);
+                                                        player.sendMessage(er2.errorMessage);
                                                         serverBridge.getLogger().warning(er2.errorMessage);
                                                     }
                                                 }
 
                                                 plot.setOwner(buyer);
                                                 plot.setOwnerId(player.getUniqueId());
-                                                plot.setCustomPrice(0.0);
+                                                plot.setPrice(0.0);
                                                 plot.setForSale(false);
 
                                                 plot.updateField("owner", buyer);
@@ -97,14 +96,14 @@ public class CmdBuy extends PlotCommand {
                                                 manager.removeSellSign(world, id);
                                                 manager.setOwnerSign(world, plot);
 
-                                                player.sendMessage(C("MsgPlotBought") + " " + Util().moneyFormat(-cost, true));
+                                                player.sendMessage(C("MsgPlotBought") + " " + plugin.moneyFormat(-cost, true));
 
                                                 if (isAdvancedLogging()) {
                                                     plugin.getLogger()
                                                             .info(buyer + " " + C("MsgBoughtPlot") + " " + id + " " + C("WordFor") + " " + cost);
                                                 }
                                             } else {
-                                                player.sendMessage("§c" + er.errorMessage);
+                                                player.sendMessage(er.errorMessage);
                                                 serverBridge.getLogger().warning(er.errorMessage);
                                             }
                                         }
@@ -112,19 +111,24 @@ public class CmdBuy extends PlotCommand {
                                 }
                             }
                         } else {
-                            player.sendMessage("§c" + C("MsgPlotNotForSale"));
+                            player.sendMessage(C("MsgPlotNotForSale"));
                         }
                     } else {
-                        player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
+                        player.sendMessage(C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
                     }
                 } else {
-                    player.sendMessage("§c" + C("MsgPermissionDenied"));
                     return false;
                 }
             } else {
-                player.sendMessage("§c" + C("MsgEconomyDisabledWorld"));
+                player.sendMessage(C("MsgEconomyDisabledWorld"));
             }
         }
         return true;
     }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme buy";
+    }
+
 }

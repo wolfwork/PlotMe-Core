@@ -1,13 +1,11 @@
 package com.worldcretornica.plotme_core.sponge;
 
 import com.worldcretornica.plotme_core.PlotId;
-import com.worldcretornica.plotme_core.api.IBiome;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.sponge.api.ISpongePlotMe_GeneratorManager;
-import com.worldcretornica.plotme_core.sponge.api.SpongeBiomeType;
 import com.worldcretornica.plotme_core.sponge.api.SpongeLocation;
 import com.worldcretornica.plotme_core.sponge.api.SpongePlayer;
 import com.worldcretornica.plotme_core.sponge.api.SpongeWorld;
@@ -16,7 +14,6 @@ import org.spongepowered.api.entity.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorManager {
 
@@ -68,11 +65,6 @@ public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public void setAuctionDisplay(IWorld world, PlotId id, String line1, String line2, String line3, String line4) {
-        generatorManager.setAuctionDisplay(((SpongeWorld) world).getWorld(), id, line1, line2, line3, line4);
-    }
-
-    @Override
     public void removeOwnerDisplay(IWorld world, PlotId id) {
         generatorManager.removeOwnerDisplay(((SpongeWorld) world).getWorld(), id);
     }
@@ -83,11 +75,6 @@ public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public void removeAuctionDisplay(IWorld world, PlotId id) {
-        generatorManager.removeAuctionDisplay(((SpongeWorld) world).getWorld(), id);
-    }
-
-    @Override
     public ILocation getPlotBottomLoc(IWorld world, PlotId id) {
         return new SpongeLocation(generatorManager.getPlotBottomLoc(((SpongeWorld) world).getWorld(), id));
     }
@@ -95,11 +82,6 @@ public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     @Override
     public ILocation getPlotTopLoc(IWorld world, PlotId id) {
         return new SpongeLocation(generatorManager.getPlotTopLoc(((SpongeWorld) world).getWorld(), id));
-    }
-
-    @Override
-    public void setBiome(IWorld world, PlotId id, IBiome biome) {
-        generatorManager.setBiome(((SpongeWorld) world).getWorld(), id, ((SpongeBiomeType) biome).getBiomeType());
     }
 
     @Override
@@ -123,18 +105,18 @@ public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public Long[] clear(ILocation bottom, ILocation top, long maxBlocks, Long[] start) {
-        return generatorManager.clear(((SpongeLocation) bottom).getLocation(), ((SpongeLocation) top).getLocation(), maxBlocks, start);
-    }
-
-    @Override
     public Long[] clear(IWorld world, PlotId id, long maxBlocks, Long[] start) {
         return generatorManager.clear(((SpongeWorld) world).getWorld(), id, maxBlocks, start);
     }
 
     @Override
     public void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean auctioned, boolean forSale) {
-        generatorManager.adjustPlotFor(((SpongeWorld) world).getWorld(), id, claimed, protect, auctioned, forSale);
+        generatorManager.adjustPlotFor(((SpongeWorld) world).getWorld(), id, claimed, protect, forSale);
+    }
+
+    @Override
+    public void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean forSale) {
+        generatorManager.adjustPlotFor(((SpongeWorld) world).getWorld(), id, claimed, protect, forSale);
     }
 
     @Override
@@ -173,28 +155,13 @@ public class SpongePlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public boolean isValidId(String id) {
-        return generatorManager.isValidId(id);
+    public int getPlotSize() {
+        return generatorManager.getPlotSize();
     }
 
     @Override
-    public boolean createConfig(String worldName, Map<String, String> args) {
-        return generatorManager.createConfig(worldName, args);
-    }
-
-    @Override
-    public Map<String, String> getDefaultGenerationConfig() {
-        return generatorManager.getDefaultGenerationConfig();
-    }
-
-    @Override
-    public int getPlotSize(String worldName) {
-        return generatorManager.getPlotSize(worldName);
-    }
-
-    @Override
-    public int getRoadHeight(String worldName) {
-        return generatorManager.getRoadHeight(worldName);
+    public int getRoadHeight() {
+        return generatorManager.getRoadHeight();
     }
 
     @Override

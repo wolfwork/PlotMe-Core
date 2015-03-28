@@ -1,41 +1,38 @@
 package com.worldcretornica.plotme_core;
 
-import com.worldcretornica.plotme_core.api.IConfigSection;
+import com.worldcretornica.configuration.ConfigAccessor;
+import com.worldcretornica.configuration.file.FileConfiguration;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.bukkit.AbstractSchematicUtil;
-import com.worldcretornica.plotme_core.utils.Util;
+import com.worldcretornica.plotme_core.storage.Database;
+import com.worldcretornica.plotme_core.storage.MySQLConnector;
+import com.worldcretornica.plotme_core.storage.SQLiteConnector;
+import net.milkbowl.vault.economy.Economy;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 public class PlotMe_Core {
 
-    public static final String CAPTION_FILE = "captions.yml";
-
-    public static final String WORLDS_CONFIG_SECTION = "worlds";
-    private static final Pattern COMPILE = Pattern.compile("jdbc:", Pattern.LITERAL);
     //Bridge
     private final IServerBridge serverBridge;
     private final AbstractSchematicUtil schematicutil;
-    private HashMap<String, IPlotMe_GeneratorManager> managers;
+    private final HashMap<String, IPlotMe_GeneratorManager> managers = new HashMap<>();
+    //Spool stuff
+    private final ConcurrentLinkedQueue<PlotToClear> plotsToClear = new ConcurrentLinkedQueue<>();
     private IWorld worldcurrentlyprocessingexpired;
     private int counterExpired;
-    //Spool stuff
-    private ConcurrentLinkedQueue<PlotToClear> plotsToClear;
-    //Global variables
-    private SqlManager sqlManager;
-    private Util util;
+    private Database sqlManager;
+    //Caption and Config File.
+    private ConfigAccessor configFile;
+    private ConfigAccessor captionFile;
 
     public PlotMe_Core(IServerBridge serverObjectBuilder, AbstractSchematicUtil schematicutil) {
         this.serverBridge = serverObjectBuilder;
         this.schematicutil = schematicutil;
-        managers = new HashMap<>();
     }
 
     public IPlotMe_GeneratorManager getGenManager(String name) {
@@ -50,35 +47,34 @@ public class PlotMe_Core {
         getSqlManager().closeConnection();
         PlotMeCoreManager.getInstance().getPlotMaps().clear();
         serverBridge.unHook();
-        PlotMeCoreManager.getInstance().setPlayersIgnoringWELimit(null);
         setWorldCurrentlyProcessingExpired(null);
         plotsToClear.clear();
-        plotsToClear = null;
         managers.clear();
-        managers = null;
     }
 
     public void enable() {
         PlotMeCoreManager.getInstance().setPlugin(this);
-        setupMySQL();
-        setupConfig();
-        setupDefaultCaptions();
+        configFile = new ConfigAccessor(getServerBridge().getDataFolder(), "config.yml");
+        captionFile = new ConfigAccessor(getServerBridge().getDataFolder(), "captions.yml");
+        setupConfigFiles();
         serverBridge.setupCommands();
-        setUtil(new Util(this));
+        setupSQL();
         serverBridge.setupHooks();
         serverBridge.setupListeners();
-        setupClearSpools();
+        getSqlManager().startConnection();
         getSqlManager().createTables();
-        getSqlManager().plotConvertToUUIDAsynchronously();
+        if (getConfig().getBoolean("coreDatabaseUpdate")) {
+            getSqlManager().coreDatabaseUpdate();
+        }
+        //getSqlManager().plotConvertToUUIDAsynchronously();
     }
 
     public void reload() {
         getSqlManager().closeConnection();
-        serverBridge.reloadConfig();
-        setupConfig();
-        reloadCaptionConfig();
-        setupDefaultCaptions();
-        setupMySQL();
+        setupConfigFiles();
+        configFile.reloadFile();
+        captionFile.reloadFile();
+        setupSQL();
         PlotMeCoreManager.getInstance().getPlotMaps().clear();
 
         for (String worldname : managers.keySet()) {
@@ -90,116 +86,59 @@ public class PlotMe_Core {
         return serverBridge.getLogger();
     }
 
-    /*private void setupWorlds() {
-        IConfigSection worldsCS = serverBridge.getConfig().getConfigurationSection(WORLDS_CONFIG_SECTION);
-        for (String world : worldsCS.getKeys(false)) {
-            String worldName = world.toLowerCase();
-            if (getGenManager(worldName) == null) {
-                getLogger().log(Level.SEVERE, "The world {0} either does not exist or not using a PlotMe generator", world);
-                getLogger().log(Level.SEVERE, "Please ensure that {0} is set up and that it is using a PlotMe generator", world);
-            } else {
-                PlotMapInfo pmi = new PlotMapInfo(this, worldName);
-                //Lets just hide a bit of code to clean up the config in here.
-                IConfigSection config = getServerBridge().loadDefaultConfig("worlds." + world);
-                config.set("BottomBlockId", null);
-                config.set("AutoLinkPlots", null);
-                plotMeCoreManager.addPlotMap(worldName, pmi);
-            }
-        }
-        if (getPlotMeCoreManager().getPlotMaps().isEmpty()) {
-            getLogger().severe("Uh oh. There are no plotworlds setup.");
-            getLogger().severe("Is that a mistake? Try making sure you setup PlotMe Correctly PlotMe to stay safe.");
-        }
-    }*/
-
-    private void setupConfig() {
+    private void setupConfigFiles() {
+        createConfigs();
+        captionFile.saveConfig();
         // Get the config we will be working with
-        IConfigSection config = serverBridge.getConfig();
-        config.set("allowToDeny", null);
-        // If no world exists add config for a world
-        //if (!config.contains("worlds") || config.contains("worlds") && config.getConfigurationSection("worlds").getKeys(false).isEmpty()) {
-        if (!(config.contains(WORLDS_CONFIG_SECTION) && !config.getConfigurationSection(WORLDS_CONFIG_SECTION).getKeys(false).isEmpty())) {
-            new PlotMapInfo(this, "plotworld");
-        }
+        FileConfiguration config = getConfig();
         // Do any config validation
-        if (config.getInt("NbClearSpools") > 100) {
-            getLogger().warning("Having more than 100 clear spools seems drastic, changing to 100");
-            config.set("NbClearSpools", 100);
+        if (config.getInt("NbClearSpools") > 50) {
+            getLogger().warning("Having more than 50 clear spools seems drastic, changing to 50");
+            config.set("NbClearSpools", 50);
         }
-
+        //Check if the config doesn't have the worlds section. This should happen only if there is no config file for the plugin already.
+        if (!config.contains("worlds")) {
+            getServerBridge().loadDefaultConfig(configFile, "worlds.plotworld");
+        }
         // Copy new values over
-        config.copyDefaults(true);
-        config.set("Language", null);
-        config.set("language", null);
-        config.saveConfig();
+        getConfig().options().copyDefaults(true);
+        configFile.saveConfig();
     }
 
-    private void setupWorld(String worldname) {
-        if (getGenManager(worldname) == null) {
-            getLogger().log(Level.SEVERE, "The world {0} either does not exist or not using a PlotMe generator", worldname);
-            getLogger().log(Level.SEVERE, "Please ensure that {0} is set up and that it is using a PlotMe generator", worldname);
-        } else {
-            PlotMapInfo pmi = new PlotMapInfo(this, worldname);
-            //Lets just hide a bit of code to clean up the config in here.
-            IConfigSection config = getServerBridge().loadDefaultConfig("worlds." + worldname.toLowerCase());
-            config.set("BottomBlockId", null);
-            config.set("AutoLinkPlots", null);
-            config.saveConfig();
-            PlotMeCoreManager.getInstance().addPlotMap(worldname, pmi);
+    private void createConfigs() {
+        if (configFile.createFile()) {
+            getLogger().info("Created Config File");
         }
-
-        if (PlotMeCoreManager.getInstance().getPlotMaps().isEmpty()) {
-            getLogger().severe("Uh oh. There are no plotworlds setup.");
-            getLogger().severe("Is that a mistake? Try making sure you setup PlotMe Correctly PlotMe to stay safe.");
+        if (captionFile.createFile()) {
+            getLogger().info("Created Caption File");
         }
     }
 
-    public IConfigSection getCaptionConfig() {
-        return serverBridge.getConfig(CAPTION_FILE);
+    private void setupWorld(String world) {
+        getServerBridge().loadDefaultConfig(configFile, "worlds." + world);
+        configFile.saveConfig();
+        PlotMapInfo pmi = new PlotMapInfo(this, configFile, world);
+        PlotMeCoreManager.getInstance().addPlotMap(world, pmi);
     }
 
-    public void reloadCaptionConfig() {
-        serverBridge.getConfig(CAPTION_FILE).reloadConfig();
-    }
-
-    private void setupDefaultCaptions() {
-        //Changing Captions File Name
-        String pluginsFolder = serverBridge.getDataFolder();
-        File coreFolder = new File(pluginsFolder);
-        File newCaptionFile = new File(coreFolder, CAPTION_FILE);
-        for (String plotMeFiles : coreFolder.list()) {
-            if (plotMeFiles.startsWith("caption")) {
-                if (CAPTION_FILE.equals(plotMeFiles)) {
-                    break;
-                } else {
-                    File oldCaptionFile = new File(coreFolder, plotMeFiles);
-                    if (oldCaptionFile.renameTo(newCaptionFile)) {
-                        getLogger().info("Renamed Caption File to captions.yml");
-                        if (oldCaptionFile.delete()) {
-                            getLogger().info("Deleted old caption file.");
-                        } else {
-                            getLogger().warning("Failed to delete old caption file. ");
-                        }
-                    }
-                }
-            }
-        }
-        if (!newCaptionFile.exists()) {
-            getServerBridge().saveResource(CAPTION_FILE, true);
-        }
+    public FileConfiguration getCaptionConfig() {
+        return captionFile.getConfig();
     }
 
     /**
-     * Setup MySQL Database
+     * Setup SQL Database
      */
-    private void setupMySQL() {
-        IConfigSection config = serverBridge.getConfig();
-
-        setSqlManager(new SqlManager(this));
-    }
-
-    private void setupClearSpools() {
-        plotsToClear = new ConcurrentLinkedQueue<>();
+    private void setupSQL() {
+        FileConfiguration config = getConfig();
+        if (config.getBoolean("usemySQL", false)) {
+            String url = config.getString("mySQLconn");
+            String user = config.getString("mySQLuname");
+            String pass = config.getString("mySQLpass");
+            setSqlManager(new MySQLConnector(this, url, user, pass));
+        } else {
+            setSqlManager(new SQLiteConnector(this));
+            getSqlManager().createTables();
+        }
     }
 
     public void addManager(String world, IPlotMe_GeneratorManager manager) {
@@ -212,11 +151,18 @@ public class PlotMe_Core {
     }
 
     public void scheduleTask(Runnable task) {
-        getLogger().info(util.C("MsgStartDeleteSession"));
+        getLogger().info(this.C("MsgStartDeleteSession"));
 
         for (int ctr = 0; ctr < 10; ctr++) {
             serverBridge.scheduleSyncDelayedTask(task, ctr * 100);
         }
+    }
+
+    public String C(String caption) {
+        return addColor(this.getCaptionConfig().getString(caption, "Missing caption: " + caption));
+    }
+    private String addColor(String string) {
+        return getServerBridge().addColor('&', string);
     }
 
     public IWorld getWorldCurrentlyProcessingExpired() {
@@ -249,9 +195,12 @@ public class PlotMe_Core {
         getLogger().info("removed taskid " + taskId);
     }
 
-    public PlotToClear getPlotLocked(String world, PlotId id) {
+    public PlotToClear getPlotLocked(IWorld world, PlotId id) {
+        if (plotsToClear.isEmpty()) {
+            return null;
+        }
         for (PlotToClear ptc : plotsToClear.toArray(new PlotToClear[plotsToClear.size()])) {
-            if (ptc.getWorld().equalsIgnoreCase(world) && ptc.getPlotId().equals(id)) {
+            if (ptc.getWorld() == world && ptc.getPlotId().equals(id)) {
                 return ptc;
             }
         }
@@ -263,20 +212,44 @@ public class PlotMe_Core {
         return serverBridge;
     }
 
-    public SqlManager getSqlManager() {
+    public Database getSqlManager() {
         return sqlManager;
     }
 
-    private void setSqlManager(SqlManager sqlManager) {
+    private void setSqlManager(Database sqlManager) {
         this.sqlManager = sqlManager;
     }
 
-    public Util getUtil() {
-        return util;
+    public FileConfiguration getConfig() {
+        return configFile.getConfig();
     }
 
-    private void setUtil(Util util) {
-        this.util = util;
+    public String moneyFormat(double price, boolean showSign) {
+        if (price == 0) {
+            return "";
+        }
+
+        String format = String.valueOf(Math.round(Math.abs(price)));
+
+        Economy economy = getServerBridge().getEconomy();
+
+        if (economy != null) {
+            if (price <= 1.0 && price >= -1.0) {
+                format = format + " " + economy.currencyNameSingular();
+            } else {
+                format = format + " " + economy.currencyNamePlural();
+            }
+        }
+
+        if (showSign) {
+            if (price > 0.0) {
+                return ("+" + format);
+            } else {
+                return ("-" + format);
+            }
+        } else {
+            return format;
+        }
     }
 
 }

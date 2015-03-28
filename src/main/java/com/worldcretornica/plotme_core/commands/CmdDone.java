@@ -4,6 +4,7 @@ import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.event.InternalPlotDoneChangeEvent;
 
@@ -13,13 +14,19 @@ public class CmdDone extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player) {
+    public String getName() {
+        return "done";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.USER_DONE) || player.hasPermission(PermissionNames.ADMIN_DONE)) {
             if (manager.isPlotWorld(player)) {
                 PlotId id = manager.getPlotId(player);
 
                 if (id == null) {
-                    player.sendMessage("§c" + C("MsgNoPlotFound"));
+                    player.sendMessage(C("MsgNoPlotFound"));
+                    return true;
                 } else if (!manager.isPlotAvailable(id, player)) {
                     Plot plot = manager.getPlotById(id, player);
                     String name = player.getName();
@@ -27,7 +34,7 @@ public class CmdDone extends PlotCommand {
                     if (player.getUniqueId().equals(plot.getOwnerId()) || player.hasPermission(PermissionNames.ADMIN_DONE)) {
                         InternalPlotDoneChangeEvent
                                 event =
-                                serverBridge.getEventFactory().callPlotDoneEvent(plugin, player.getWorld(), plot, player, plot.isFinished());
+                                serverBridge.getEventFactory().callPlotDoneEvent(player.getWorld(), plot, player, plot.isFinished());
 
                         if (!event.isCancelled()) {
                             if (plot.isFinished()) {
@@ -48,17 +55,21 @@ public class CmdDone extends PlotCommand {
                         }
                     }
                 } else {
-                    player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
+                    player.sendMessage(C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
                 }
             } else {
 
-                player.sendMessage("§c" + C("MsgNotPlotWorld"));
+                player.sendMessage(C("MsgNotPlotWorld"));
                 return true;
             }
         } else {
-            player.sendMessage("§c" + C("MsgPermissionDenied"));
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme done";
     }
 }

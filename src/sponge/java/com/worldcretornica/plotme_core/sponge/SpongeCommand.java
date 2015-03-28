@@ -2,8 +2,9 @@ package com.worldcretornica.plotme_core.sponge;
 
 import com.google.common.base.Optional;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
-import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.CommandExBase;
 import org.spongepowered.api.Game;
+import org.spongepowered.api.entity.player.Player;
 import org.spongepowered.api.util.command.CommandCallable;
 import org.spongepowered.api.util.command.CommandException;
 import org.spongepowered.api.util.command.CommandSource;
@@ -11,17 +12,15 @@ import org.spongepowered.api.util.command.CommandSource;
 import java.util.List;
 
 //TODO Write command class
-public class SpongeCommand implements CommandCallable {
+public class SpongeCommand extends CommandExBase implements CommandCallable {
 
     private final PlotMeCoreManager manager;
-    private final PlotMe_Core api;
     private final Game game;
 
     public SpongeCommand(PlotMe_Sponge plugin) {
+        super(plugin.getAPI());
         manager = PlotMeCoreManager.getInstance();
-        api = plugin.getAPI();
         game = plugin.getGame();
-
     }
 
     /**
@@ -39,6 +38,9 @@ public class SpongeCommand implements CommandCallable {
      */
     @Override
     public boolean call(CommandSource source, String arguments, List<String> parents) throws CommandException {
+        if (source instanceof Player) {
+            return true;
+        }
         return false;
     }
 
@@ -65,7 +67,7 @@ public class SpongeCommand implements CommandCallable {
      */
     @Override
     public Optional<String> getShortDescription() {
-        return null;
+        return Optional.of("Generic PlotMe Help");
     }
 
     /**
@@ -75,7 +77,7 @@ public class SpongeCommand implements CommandCallable {
      */
     @Override
     public Optional<String> getHelp() {
-        return null;
+        return Optional.of("Generic PlotMe Help");
     }
 
     /**
@@ -88,7 +90,7 @@ public class SpongeCommand implements CommandCallable {
      */
     @Override
     public String getUsage() {
-        return null;
+        return "Add this message later";
     }
 
     /**
@@ -104,6 +106,7 @@ public class SpongeCommand implements CommandCallable {
      */
     @Override
     public List<String> getSuggestions(CommandSource source, String arguments) throws CommandException {
+        //noinspection ConstantConditions
         return null;
     }
 }

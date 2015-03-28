@@ -1,5 +1,6 @@
 package com.worldcretornica.plotme_core.sponge;
 
+import com.google.inject.Inject;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.sponge.api.SpongePlayer;
@@ -34,7 +35,6 @@ public class PlotMe_Sponge {
     public void onEnable(ServerStartedEvent event) {
         game.getEventManager().register(this, new SpongePlotListener(this));
         game.getEventManager().register(this, new SpongePlotDenyListener(this));
-
         serverObjectBuilder = new SpongeServerBridge(this);
 
         SpongeAbstractSchematicUtil schematicutil = new SchematicUtil(this); //TODO
@@ -51,8 +51,8 @@ public class PlotMe_Sponge {
         return plotme;
     }
 
+    @Inject
     public Game getGame() {
-
         return game;
     }
 

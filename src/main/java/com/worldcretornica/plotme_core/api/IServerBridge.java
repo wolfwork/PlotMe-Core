@@ -1,14 +1,18 @@
 package com.worldcretornica.plotme_core.api;
 
+import com.worldcretornica.configuration.ConfigAccessor;
+import com.worldcretornica.configuration.ConfigurationSection;
+import com.worldcretornica.configuration.file.YamlConfiguration;
 import com.worldcretornica.plotme_core.PlotWorldEdit;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 
-import java.io.InputStream;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -58,11 +62,11 @@ public abstract class IServerBridge {
 
     public abstract PlotWorldEdit getPlotWorldEdit();
 
-    public boolean getUsingLwc() {
+    public boolean isUsingLwc() {
         return usingLwc;
     }
 
-    public void setUsingLwc(boolean usingLwc) {
+    protected void setUsingLwc(boolean usingLwc) {
         this.usingLwc = usingLwc;
     }
 
@@ -84,23 +88,16 @@ public abstract class IServerBridge {
 
     public abstract void runTaskLaterAsynchronously(Runnable runnable, long delay);
 
-    public abstract IBiome getBiome(String name);
+    public abstract boolean doesBiomeExist(String name);
 
     public abstract IEventFactory getEventFactory();
 
-    public abstract InputStream getResource(String path);
+    public abstract File getDataFolder();
 
-    public abstract String getDataFolder();
-
-    public abstract void reloadConfig();
-
-    public abstract IConfigSection getConfig();
-
-    public abstract IConfigSection getConfig(String file);
-
-    public abstract void saveResource(String fileName, boolean replace);
-
-    public abstract boolean addMultiverseWorld(String worldName, String seed, String generator);
+    public void saveResource(boolean replace) {
+        YamlConfiguration.loadConfig(
+                new InputStreamReader(getClass().getClassLoader().getResourceAsStream("default-world.yml"), StandardCharsets.UTF_8));
+    }
 
     public abstract List<String> getBiomes();
 
@@ -110,9 +107,35 @@ public abstract class IServerBridge {
      */
     public abstract Collection<IWorld> getWorlds();
 
-    public abstract boolean createPlotWorld(String worldName, String generator, Map<String, String> args);
+    //public abstract boolean createPlotWorld(String worldName, String generator, Map<String, String> args);
 
     public abstract IMaterial getMaterial(String string);
 
-    public abstract IConfigSection loadDefaultConfig(String string);
+    public ConfigurationSection loadDefaultConfig(ConfigAccessor configFile, String world) {
+        ConfigurationSection defaultWorld = getDefaultWorld();
+        ConfigurationSection configSection;
+        if (configFile.getConfig().contains(world)) {
+            configSection = configFile.getConfig().getConfigurationSection(world);
+        } else {
+            configFile.getConfig().set(world, defaultWorld);
+            configFile.saveConfig();
+            configSection = configFile.getConfig().getConfigurationSection(world);
+        }
+        for (String path : defaultWorld.getKeys(true)) {
+            configSection.addDefault(path, defaultWorld.get(path));
+        }
+        configFile.saveConfig();
+        return configSection;
+    }
+
+    public ConfigurationSection getDefaultWorld() {
+        return YamlConfiguration
+                .loadConfig(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("default-world.yml"), StandardCharsets.UTF_8));
+    }
+
+    public abstract File getWorldFolder();
+
+    public abstract List<IOfflinePlayer> getOfflinePlayers();
+
+    public abstract String addColor(char c, String string);
 }

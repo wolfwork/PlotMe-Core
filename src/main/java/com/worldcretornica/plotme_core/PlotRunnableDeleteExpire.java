@@ -3,6 +3,7 @@ package com.worldcretornica.plotme_core;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotResetEvent;
+import com.worldcretornica.plotme_core.storage.Database;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class PlotRunnableDeleteExpire implements Runnable {
 
     @Override
     public void run() {
-        SqlManager sqlmanager = plugin.getSqlManager();
+        Database sqlmanager = plugin.getSqlManager();
         PlotMeCoreManager plotMeCoreManager = PlotMeCoreManager.getInstance();
 
         if (plugin.getWorldCurrentlyProcessingExpired() != null) {
@@ -31,7 +32,7 @@ public class PlotRunnableDeleteExpire implements Runnable {
                 String ids = "";
 
                 for (Plot expiredPlot : expiredPlots) {
-                    InternalPlotResetEvent event = plugin.getServerBridge().getEventFactory().callPlotResetEvent(plugin, world, expiredPlot, sender);
+                    InternalPlotResetEvent event = plugin.getServerBridge().getEventFactory().callPlotResetEvent(world, expiredPlot, sender);
 
                     if (!event.isCancelled()) {
                         plotMeCoreManager.clear(world, expiredPlot, sender, ClearReason.Expired);
@@ -43,7 +44,7 @@ public class PlotRunnableDeleteExpire implements Runnable {
                         plotMeCoreManager.removeOwnerSign(world, id);
                         plotMeCoreManager.removeSellSign(world, id);
 
-                        sqlmanager.deletePlot(id, world.getName());
+                        sqlmanager.deletePlot(expiredPlot.getInternalID());
 
                         plugin.setCounterExpired(plugin.getCounterExpired() - 1);
                     }
@@ -53,11 +54,11 @@ public class PlotRunnableDeleteExpire implements Runnable {
                     ids = ids.substring(0, ids.length() - 2);
                 }
 
-                plugin.getLogger().info(plugin.getUtil().C("MsgDeletedExpiredPlots") + " " + ids);
+                plugin.getLogger().info(plugin.C("MsgDeletedExpiredPlots") + " " + ids);
             }
 
             if (plugin.getCounterExpired() == 0) {
-                plugin.getLogger().info(plugin.getUtil().C("MsgDeleteSessionFinished"));
+                plugin.getLogger().info(plugin.C("MsgDeleteSessionFinished"));
                 plugin.setWorldCurrentlyProcessingExpired(null);
             }
         }

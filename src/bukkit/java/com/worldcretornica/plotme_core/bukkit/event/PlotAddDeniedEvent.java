@@ -5,19 +5,12 @@ import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotAddDeniedEvent;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
 public class PlotAddDeniedEvent extends PlotEvent implements Cancellable {
 
     private final InternalPlotAddDeniedEvent event;
-
-    public PlotAddDeniedEvent(World world, Plot plot, Player player, String denied) {
-        super(plot, world);
-        event = new InternalPlotAddDeniedEvent(new BukkitWorld(world), plot, new BukkitPlayer(player), denied);
-    }
 
     public PlotAddDeniedEvent(IWorld world, Plot plot, IPlayer player, String denied) {
         super(plot, world);

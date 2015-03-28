@@ -7,7 +7,6 @@ import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.bukkit.PlotMe_CorePlugin;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -36,37 +35,12 @@ public class BukkitPlotDenyListener implements Listener {
             if (idTo != null) {
                 Plot plot = manager.getPlotById(idTo, player);
 
-                if (plot != null && plot.isDeniedInternal(player.getName(), player.getUniqueId())) {
-                    Location t = event.getFrom().clone();
-                    t.setYaw(event.getTo().getYaw());
-                    t.setPitch(event.getTo().getPitch());
-                    event.setTo(t);
+                if (plot != null && plot.isDeniedInternal(player.getName())) {
+                    event.setTo(event.getFrom());
                 }
             }
         }
     }
-
-/*
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerTeleport(PlayerTeleportEvent event) {
-        BukkitPlayer player = (BukkitPlayer) plugin.wrapPlayer(event.getPlayer());
-
-        if (manager.isPlotWorld(player) && !player.hasPermission(PermissionNames.ADMIN_BYPASSDENY)) {
-            BukkitLocation to = new BukkitLocation(event.getTo());
-
-            PlotId idTo = manager.getPlotId(to);
-
-            if (idTo != null) {
-                Plot plot = manager.getPlotById(idTo, player);
-
-                if (plot != null && plot.isDeniedInternal(player.getName(), player.getUniqueId())) {
-                    BukkitLocation location = (BukkitLocation) manager.getPlotHome(player.getWorld(), plot.getId());
-                    event.setTo(location.getLocation());
-                }
-            }
-        }
-    }
-*/
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {

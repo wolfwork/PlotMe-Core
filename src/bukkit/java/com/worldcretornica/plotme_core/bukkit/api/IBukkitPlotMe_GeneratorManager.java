@@ -4,11 +4,9 @@ import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.schematic.Schematic;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 
 import java.util.List;
-import java.util.Map;
 
 public interface IBukkitPlotMe_GeneratorManager {
 
@@ -26,19 +24,13 @@ public interface IBukkitPlotMe_GeneratorManager {
 
     void setSellerDisplay(World world, PlotId id, String line1, String line2, String Line3, String line4);
 
-    void setAuctionDisplay(World world, PlotId id, String line1, String line2, String Line3, String line4);
-
     void removeOwnerDisplay(World world, PlotId id);
 
     void removeSellerDisplay(World world, PlotId id);
 
-    void removeAuctionDisplay(World world, PlotId id);
-
     Location getPlotBottomLoc(World world, PlotId id);
 
     Location getPlotTopLoc(World world, PlotId id);
-
-    void setBiome(World world, PlotId id, Biome biome);
 
     void refreshPlotChunks(World world, PlotId id);
 
@@ -52,7 +44,7 @@ public interface IBukkitPlotMe_GeneratorManager {
 
     Long[] clear(World world, PlotId id, long maxBlocks, Long[] start);
 
-    void adjustPlotFor(World world, PlotId id, boolean claimed, boolean protect, boolean auctioned, boolean forSale);
+    void adjustPlotFor(World world, PlotId id, boolean claimed, boolean protect, boolean forSale);
 
     boolean isBlockInPlot(PlotId id, Location location);
 
@@ -68,15 +60,9 @@ public interface IBukkitPlotMe_GeneratorManager {
 
     Location getPlotHome(World world, PlotId id);
 
-    boolean isValidId(String id);
+    int getPlotSize();
 
-    boolean createConfig(String worldName, Map<String, String> args);
-
-    Map<String, String> getDefaultGenerationConfig();
-
-    int getPlotSize(String worldName);
-
-    int getRoadHeight(String worldName);
+    int getRoadHeight();
 
     Location getPlotMiddle(World world, PlotId id);
 

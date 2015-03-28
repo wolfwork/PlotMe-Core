@@ -4,7 +4,6 @@ import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.schematic.Schematic;
 
 import java.util.List;
-import java.util.Map;
 
 public interface IPlotMe_GeneratorManager {
 
@@ -22,19 +21,13 @@ public interface IPlotMe_GeneratorManager {
 
     void setSellerDisplay(IWorld world, PlotId id, String line1, String line2, String line3, String line4);
 
-    void setAuctionDisplay(IWorld world, PlotId id, String line1, String line2, String line3, String line4);
-
     void removeOwnerDisplay(IWorld world, PlotId id);
 
     void removeSellerDisplay(IWorld world, PlotId id);
 
-    void removeAuctionDisplay(IWorld world, PlotId id);
-
     ILocation getPlotBottomLoc(IWorld world, PlotId id);
 
     ILocation getPlotTopLoc(IWorld world, PlotId id);
-
-    void setBiome(IWorld world, PlotId id, IBiome biome);
 
     void refreshPlotChunks(IWorld world, PlotId id);
 
@@ -44,11 +37,12 @@ public interface IPlotMe_GeneratorManager {
 
     void clear(ILocation bottom, ILocation top);
 
-    Long[] clear(ILocation bottom, ILocation top, long maxBlocks, Long[] start);
-
     Long[] clear(IWorld world, PlotId id, long maxBlocks, Long[] start);
 
+    @Deprecated
     void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean auctioned, boolean forSale);
+
+    void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean forSale);
 
     boolean isBlockInPlot(PlotId id, ILocation blockLocation);
 
@@ -64,15 +58,9 @@ public interface IPlotMe_GeneratorManager {
 
     ILocation getPlotHome(IWorld world, PlotId id);
 
-    boolean isValidId(String id);
+    int getPlotSize();
 
-    boolean createConfig(String worldName, Map<String, String> args);
-
-    Map<String, String> getDefaultGenerationConfig();
-
-    int getPlotSize(String worldName);
-
-    int getRoadHeight(String worldName);
+    int getRoadHeight();
 
     ILocation getPlotMiddle(IWorld world, PlotId id);
 

@@ -2,7 +2,6 @@ package com.worldcretornica.plotme_core.bukkit.event;
 
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
-import com.worldcretornica.plotme_core.api.IBiome;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -20,7 +19,6 @@ import com.worldcretornica.plotme_core.api.event.InternalPlotLoadEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotMoveEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotOwnerChangeEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotProtectChangeEvent;
-import com.worldcretornica.plotme_core.api.event.InternalPlotReloadEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotRemoveAllowedEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotRemoveDeniedEvent;
 import com.worldcretornica.plotme_core.api.event.InternalPlotResetEvent;
@@ -72,7 +70,7 @@ public class BukkitEventFactory implements IEventFactory {
     }
 
     @Override
-    public InternalPlotBiomeChangeEvent callPlotBiomeChangeEvent(IWorld world, Plot plot, IPlayer player, IBiome biome) {
+    public InternalPlotBiomeChangeEvent callPlotBiomeChangeEvent(IWorld world, Plot plot, IPlayer player, String biome) {
         PlotBiomeChangeEvent event = new PlotBiomeChangeEvent(world, plot, player, biome);
         Bukkit.getPluginManager().callEvent(event);
         return event.getInternal();
@@ -107,8 +105,8 @@ public class BukkitEventFactory implements IEventFactory {
     }
 
     @Override
-    public InternalPlotTeleportHomeEvent callPlotTeleportHomeEvent(IWorld world, Plot plot, IPlayer player) {
-        PlotTeleportHomeEvent event = new PlotTeleportHomeEvent(world, plot, player);
+    public InternalPlotTeleportHomeEvent callPlotTeleportHomeEvent(IWorld world, Plot plot, IPlayer player, ILocation location) {
+        PlotTeleportHomeEvent event = new PlotTeleportHomeEvent(world, plot, player, location);
         Bukkit.getPluginManager().callEvent(event);
         return event.getInternal();
     }
@@ -124,13 +122,6 @@ public class BukkitEventFactory implements IEventFactory {
     @Override
     public InternalPlotProtectChangeEvent callPlotProtectChangeEvent(IWorld world, Plot plot, IPlayer player, boolean protect) {
         PlotProtectChangeEvent event = new PlotProtectChangeEvent(world, plot, player, protect);
-        Bukkit.getPluginManager().callEvent(event);
-        return event.getInternal();
-    }
-
-    @Override
-    public InternalPlotReloadEvent callPlotReloadEvent() {
-        PlotReloadEvent event = new PlotReloadEvent();
         Bukkit.getPluginManager().callEvent(event);
         return event.getInternal();
     }
@@ -180,7 +171,7 @@ public class BukkitEventFactory implements IEventFactory {
 
     @Override
     public InternalPlotTeleportEvent callPlotTeleportEvent(IWorld world, Plot plot, IPlayer player, ILocation location,
-            String plotId) {
+            PlotId plotId) {
         PlotTeleportEvent event = new PlotTeleportEvent(world, plot, player, location, plotId);
         Bukkit.getPluginManager().callEvent(event);
         return event.getInternal();

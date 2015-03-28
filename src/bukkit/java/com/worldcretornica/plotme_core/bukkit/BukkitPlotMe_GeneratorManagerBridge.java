@@ -1,12 +1,10 @@
 package com.worldcretornica.plotme_core.bukkit;
 
 import com.worldcretornica.plotme_core.PlotId;
-import com.worldcretornica.plotme_core.api.IBiome;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IWorld;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
@@ -16,7 +14,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorManager {
 
@@ -67,10 +64,6 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
         generatorManager.setSellerDisplay(((BukkitWorld) world).getWorld(), id, line1, line2, line3, line4);
     }
 
-    @Override
-    public void setAuctionDisplay(IWorld world, PlotId id, String line1, String line2, String line3, String line4) {
-        generatorManager.setAuctionDisplay(((BukkitWorld) world).getWorld(), id, line1, line2, line3, line4);
-    }
 
     @Override
     public void removeOwnerDisplay(IWorld world, PlotId id) {
@@ -83,11 +76,6 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public void removeAuctionDisplay(IWorld world, PlotId id) {
-        generatorManager.removeAuctionDisplay(((BukkitWorld) world).getWorld(), id);
-    }
-
-    @Override
     public ILocation getPlotBottomLoc(IWorld world, PlotId id) {
         return new BukkitLocation(generatorManager.getPlotBottomLoc(((BukkitWorld) world).getWorld(), id));
     }
@@ -95,11 +83,6 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     @Override
     public ILocation getPlotTopLoc(IWorld world, PlotId id) {
         return new BukkitLocation(generatorManager.getPlotTopLoc(((BukkitWorld) world).getWorld(), id));
-    }
-
-    @Override
-    public void setBiome(IWorld world, PlotId id, IBiome biome) {
-        generatorManager.setBiome(((BukkitWorld) world).getWorld(), id, ((BukkitBiome) biome).getBiome());
     }
 
     @Override
@@ -123,18 +106,19 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public Long[] clear(ILocation bottom, ILocation top, long maxBlocks, Long[] start) {
-        return generatorManager.clear(((BukkitLocation) bottom).getLocation(), ((BukkitLocation) top).getLocation(), maxBlocks, start);
-    }
-
-    @Override
     public Long[] clear(IWorld world, PlotId id, long maxBlocks, Long[] start) {
         return generatorManager.clear(((BukkitWorld) world).getWorld(), id, maxBlocks, start);
     }
 
+    @Deprecated
     @Override
     public void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean auctioned, boolean forSale) {
-        generatorManager.adjustPlotFor(((BukkitWorld) world).getWorld(), id, claimed, protect, auctioned, forSale);
+        adjustPlotFor(world, id, claimed, protect, forSale);
+    }
+
+    @Override
+    public void adjustPlotFor(IWorld world, PlotId id, boolean claimed, boolean protect, boolean forSale) {
+        generatorManager.adjustPlotFor(((BukkitWorld) world).getWorld(), id, claimed, protect, forSale);
     }
 
     @Override
@@ -173,28 +157,13 @@ public class BukkitPlotMe_GeneratorManagerBridge implements IPlotMe_GeneratorMan
     }
 
     @Override
-    public boolean isValidId(String id) {
-        return generatorManager.isValidId(id);
+    public int getPlotSize() {
+        return generatorManager.getPlotSize();
     }
 
     @Override
-    public boolean createConfig(String worldName, Map<String, String> args) {
-        return generatorManager.createConfig(worldName, args);
-    }
-
-    @Override
-    public Map<String, String> getDefaultGenerationConfig() {
-        return generatorManager.getDefaultGenerationConfig();
-    }
-
-    @Override
-    public int getPlotSize(String worldName) {
-        return generatorManager.getPlotSize(worldName);
-    }
-
-    @Override
-    public int getRoadHeight(String worldName) {
-        return generatorManager.getRoadHeight(worldName);
+    public int getRoadHeight() {
+        return generatorManager.getRoadHeight();
     }
 
     @Override

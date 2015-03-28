@@ -4,9 +4,12 @@ import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
+
+import java.util.Collections;
+import java.util.List;
 
 public class CmdInfo extends PlotCommand {
 
@@ -14,104 +17,86 @@ public class CmdInfo extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player) {
+    @Override
+    public List getAliases() {
+        return Collections.singletonList("i");
+    }
+
+    public String getName() {
+        return "info";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.USER_INFO)) {
             IWorld world = player.getWorld();
             if (manager.isPlotWorld(world)) {
                 PlotId id = manager.getPlotId(player);
 
                 if (id == null) {
-                    player.sendMessage("§c" + C("MsgNoPlotFound"));
-                } else if (!manager.isPlotAvailable(id, world)) {
+                    player.sendMessage(C("MsgNoPlotFound"));
+                    return true;
+                }
+                if (!manager.isPlotAvailable(id, world)) {
                     Plot plot = manager.getPlotById(id, world);
 
-                    player.sendMessage("§aID: §b" + id + "§a " + C("InfoOwner") + ": §b" + plot.getOwner()
-                            + "§a " + C("InfoBiome") + ": §b" + ((BukkitBiome) plot.getBiome()).getBiome().name());
+                    player.sendMessage("Internal ID: " + plot.getInternalID());
+                    player.sendMessage("ID: " + id + " " + C("InfoOwner") + ": " + plot.getOwner()
+                            + " " + C("InfoBiome") + ": " + plot.getBiome());
 
                     if (plot.getExpiredDate() == null) {
                         if (plot.isFinished()) {
-                            if (plot.isProtect()) {
-                                player.sendMessage("§a" + C("InfoExpire") + ": §b" + C("WordNever")
-                                        + "§a " + C("InfoFinished") + ": §b" + C("WordYes")
-                                        + "§a " + C("InfoProtected") + ": §b" + C("WordYes"));
+                            if (plot.isProtected()) {
+                                player.sendMessage(C("InfoExpire") + ": " + C("WordNever")
+                                        + " " + C("InfoFinished") + ": " + C("WordYes")
+                                        + " " + C("InfoProtected") + ": " + C("WordYes"));
                             } else {
-                                player.sendMessage("§a" + C("InfoExpire") + ": §b" + C("WordNever")
-                                        + "§a " + C("InfoFinished") + ": §b" + C("WordYes")
-                                        + "§a " + C("InfoProtected") + ": §b" + C("WordNo"));
+                                player.sendMessage(C("InfoExpire") + ": " + C("WordNever")
+                                        + " " + C("InfoFinished") + ": " + C("WordYes")
+                                        + " " + C("InfoProtected") + ": " + C("WordNo"));
                             }
-                        } else if (plot.isProtect()) {
-                            player.sendMessage("§a" + C("InfoExpire") + ": §b" + C("WordNever")
-                                    + "§a " + C("InfoFinished") + ": §b" + C("WordNo")
-                                    + "§a " + C("InfoProtected") + ": §b" + C("WordYes"));
+                        } else if (plot.isProtected()) {
+                            player.sendMessage(C("InfoExpire") + ": " + C("WordNever")
+                                    + " " + C("InfoFinished") + ": " + C("WordNo")
+                                    + " " + C("InfoProtected") + ": " + C("WordYes"));
                         } else {
-                            player.sendMessage("§a" + C("InfoExpire") + ": §b" + C("WordNever")
-                                    + "§a " + C("InfoFinished") + ": §b" + C("WordNo")
-                                    + "§a " + C("InfoProtected") + ": §b" + C("WordNo"));
+                            player.sendMessage(C("InfoExpire") + ": " + C("WordNever")
+                                    + " " + C("InfoFinished") + ": " + C("WordNo")
+                                    + " " + C("InfoProtected") + ": " + C("WordNo"));
                         }
-                    } else if (plot.isProtect()) {
+                    } else if (plot.isProtected()) {
                         if (plot.isFinished()) {
-                            player.sendMessage("§a" + C("InfoExpire") + ": §b" + plot.getExpiredDate()
-                                    + "§a " + C("InfoFinished") + ": §b" + C("WordYes")
-                                    + "§a " + C("InfoProtected") + ": §b" + C("WordYes"));
+                            player.sendMessage(C("InfoExpire") + ": " + plot.getExpiredDate()
+                                    + " " + C("InfoFinished") + ": " + C("WordYes")
+                                    + " " + C("InfoProtected") + ": " + C("WordYes"));
                         } else {
-                            player.sendMessage("§a" + C("InfoExpire") + ": §b" + plot.getExpiredDate()
-                                    + "§a " + C("InfoFinished") + ": §b" + C("WordNo")
-                                    + "§a " + C("InfoProtected") + ": §b" + C("WordYes"));
+                            player.sendMessage(C("InfoExpire") + ": " + plot.getExpiredDate()
+                                    + " " + C("InfoFinished") + ": " + C("WordNo")
+                                    + " " + C("InfoProtected") + ": " + C("WordYes"));
                         }
                     } else if (plot.isFinished()) {
-                        player.sendMessage("§a" + C("InfoExpire") + ": §b" + plot.getExpiredDate()
-                                + "§a " + C("InfoFinished") + ": §b" + C("WordYes")
-                                + "§a " + C("InfoProtected") + ": §b" + C("WordNo"));
+                        player.sendMessage(C("InfoExpire") + ": " + plot.getExpiredDate()
+                                + " " + C("InfoFinished") + ": " + C("WordYes")
+                                + " " + C("InfoProtected") + ": " + C("WordNo"));
                     } else {
-                        player.sendMessage("§a" + C("InfoExpire") + ": §b" + plot.getExpiredDate()
-                                + "§a " + C("InfoFinished") + ": §b" + C("WordNo")
-                                + "§a " + C("InfoProtected") + ": §b" + C("WordNo"));
+                        player.sendMessage(C("InfoExpire") + ": " + plot.getExpiredDate()
+                                + " " + C("InfoFinished") + ": " + C("WordNo")
+                                + " " + C("InfoProtected") + ": " + C("WordNo"));
                     }
 
-                    if (plot.allowedcount() > 0) {
-                        player.sendMessage("§a" + C("InfoHelpers") + ": §b" + plot.getAllowed());
+                    if (plot.allowed().size() > 0) {
+                        player.sendMessage(C("InfoHelpers") + ": " + plot.getAllowed());
                     }
 
-                    if (plot.deniedcount() > 0) {
-                        player.sendMessage("§a" + C("InfoDenied") + ": §b" + plot.getDenied());
+                    if (plot.denied().size() > 0) {
+                        player.sendMessage(C("InfoDenied") + ": " + plot.getDenied());
                     }
 
                     if (manager.isEconomyEnabled(world)) {
-                        if (plot.getCurrentBidder() == null) {
-                            if (plot.isAuctioned()) {
-                                if (plot.isForSale()) {
-                                    player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + (C("WordYes")
-                                            + "§a " + C("InfoMinimumBid") + ": §b" + Math
-                                            .round(plot.getCurrentBid()))
-                                            + "§a " + C("InfoForSale") + ": §b" + ("§b" + Math.round(plot.getCustomPrice())));
-                                } else {
-                                    player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + (C("WordYes")
-                                            + "§a " + C("InfoMinimumBid") + ": §b" + Math
-                                            .round(plot.getCurrentBid()))
-                                            + "§a " + C("InfoForSale") + ": §b" + C("WordNo"));
-                                }
-                            } else if (plot.isForSale()) {
-                                player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + C("WordNo")
-                                        + "§a " + C("InfoForSale") + ": §b" + ("§b" + Math.round(plot.getCustomPrice())));
-                            } else {
-                                player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + C("WordNo")
-                                        + "§a " + C("InfoForSale") + ": §b" + C("WordNo"));
-                            }
+                        if (plot.isForSale()) {
+                            player.sendMessage(C("InfoForSale") + ": " + (Math.round(plot.getPrice())));
                         } else {
-                            if (plot.isAuctioned()) {
-                                player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + (C("WordYes")
-                                        + "§a " + C("InfoBidder") + ": §b" + plot.getCurrentBidder()
-                                        + "§a " + C("InfoBid") + ": §b" + Math
-                                        .round(plot.getCurrentBid()))
-                                        + "§a " + C("InfoForSale") + ": §b" + (plot.isForSale() ? "§b" + Math.round(plot.getCustomPrice())
-                                        : C("WordNo")));
-                            } else if (plot.isForSale()) {
-                                player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + C("WordNo")
-                                        + "§a " + C("InfoForSale") + ": §b" + ("§b" + Math.round(plot.getCustomPrice())));
-                            } else {
-                                player.sendMessage("§a" + C("InfoAuctionned") + ": §b" + C("WordNo")
-                                        + "§a " + C("InfoForSale") + ": §b" + C("WordNo"));
-                            }
+                            player.sendMessage(C("InfoForSale") + ": " + C("WordNo"));
                         }
                     }
                     int bottomX = manager.bottomX(id, world);
@@ -119,19 +104,23 @@ public class CmdInfo extends PlotCommand {
                     int topX = manager.topX(id, world);
                     int topZ = manager.topZ(id, world);
 
-                    player.sendMessage("§b" + C("WordBottom") + ": §r" + bottomX + "§9,§r" + bottomZ);
-                    player.sendMessage("§b" + C("WordTop") + ": §r" + topX + "§9,§r" + topZ);
+                    player.sendMessage(C("WordBottom") + ": " + bottomX + "," + bottomZ);
+                    player.sendMessage(C("WordTop") + ": " + topX + "," + topZ);
 
                 } else {
-                    player.sendMessage("§c" + C("MsgThisPlot") + " (" + id + ") " + C("MsgHasNoOwner"));
+                    player.sendMessage(C("MsgThisPlot") + " (" + id + ") " + C("MsgHasNoOwner"));
                 }
             } else {
-                player.sendMessage("§c" + C("MsgNotPlotWorld"));
+                player.sendMessage(C("MsgNotPlotWorld"));
             }
         } else {
-            player.sendMessage("§c" + C("MsgPermissionDenied"));
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme info";
     }
 }

@@ -34,6 +34,7 @@ public class SpongePlotListener {
     private final PlotMeCoreManager manager;
 
     public SpongePlotListener(PlotMe_Sponge instance) {
+        //noinspection ConstantConditions
         api = instance.getAPI();
         this.plugin = instance;
         manager = PlotMeCoreManager.getInstance();
@@ -50,26 +51,26 @@ public class SpongePlotListener {
             if (id == null) {
                 event.setCancelled(true);
             } else {
-                PlotToClear ptc = api.getPlotLocked(location.getWorld().getName(), id);
+                PlotToClear ptc = api.getPlotLocked(location.getWorld(), id);
                 if (ptc != null) {
                     switch (ptc.getReason()) {
                         case Clear:
-                            player.sendMessage(api.getUtil().C("MsgPlotLockedClear"));
+                            player.sendMessage(api.C("MsgPlotLockedClear"));
                             break;
                         case Reset:
-                            player.sendMessage(api.getUtil().C("MsgPlotLockedReset"));
+                            player.sendMessage(api.C("MsgPlotLockedReset"));
                             break;
                         case Expired:
-                            player.sendMessage(api.getUtil().C("MsgPlotLockedExpired"));
+                            player.sendMessage(api.C("MsgPlotLockedExpired"));
                             break;
                     }
                     event.setCancelled(true);
                 } else {
                     Plot plot = manager.getMap(location).getPlot(id);
 
-                    if (plot == null || !plot.isAllowed(player.getName(), player.getUniqueId())) {
+                    if (plot == null || !plot.isAllowed(player.getUniqueId())) {
                         if (cannotBuild) {
-                            player.sendMessage(api.getUtil().C("ErrCannotBuild"));
+                            player.sendMessage(api.C("ErrCannotBuild"));
                             event.setCancelled(true);
                         }
                     } else {
@@ -140,12 +141,10 @@ public class SpongePlotListener {
         PlotMapInfo pmi = PlotMeCoreManager.getInstance().getMap(world);
         if (!pmi.canUseProjectiles()) {
             ProjectileSource source = event.getSource().orNull();
-            if (source != null) {
-                if (source instanceof Player) {
-                    //noinspection OverlyStrongTypeCast
-                    ((Player) source).sendMessage("");
-                    event.getLaunchedProjectile().remove();
-                }
+            if (source instanceof Player) {
+                //noinspection OverlyStrongTypeCast
+                ((Player) source).sendMessage("");
+                event.getLaunchedProjectile().remove();
             }
         }
     }

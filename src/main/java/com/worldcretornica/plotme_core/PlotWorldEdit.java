@@ -40,7 +40,7 @@ public class PlotWorldEdit {
             PlotMeCoreManager manager = PlotMeCoreManager.getInstance();
             Plot plot = manager.getPlotById(id, player);
 
-            if (plot != null && plot.isAllowed(player.getName(), player.getUniqueId())) {
+            if (plot != null && plot.isAllowed(player.getUniqueId())) {
                 bottom = (BukkitLocation) manager.getPlotBottomLoc(bukkitWorld, id);
                 top = (BukkitLocation) manager.getPlotTopLoc(bukkitWorld, id);
 
@@ -59,10 +59,9 @@ public class PlotWorldEdit {
             }
         }
 
-        bottom = new BukkitLocation(new Location(bukkitWorld.getWorld(), 0, 0, 0));
-        top = new BukkitLocation(new Location(bukkitWorld.getWorld(), 0, 0, 0));
-
         if (session.getMask() == null) {
+            bottom = new BukkitLocation(new Location(bukkitWorld.getWorld(), 0, 0, 0));
+            top = new BukkitLocation(new Location(bukkitWorld.getWorld(), 0, 0, 0));
             LocalSession localsession = worldEdit.getSession(bukkitPlayer.getPlayer());
             World world = localsession.getSelectionWorld();
 

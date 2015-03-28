@@ -2,26 +2,25 @@ package com.worldcretornica.plotme_core.commands;
 
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IServerBridge;
-import com.worldcretornica.plotme_core.utils.Util;
+
+import java.util.Collections;
+import java.util.List;
 
 public abstract class PlotCommand {
 
-    protected final PlotMe_Core plugin;
+    final PlotMe_Core plugin;
 
-    protected final IServerBridge serverBridge;
+    final IServerBridge serverBridge;
 
-    protected final PlotMeCoreManager manager;
+    final PlotMeCoreManager manager;
 
     public PlotCommand(PlotMe_Core instance) {
         plugin = instance;
         serverBridge = plugin.getServerBridge();
         manager = PlotMeCoreManager.getInstance();
-    }
-
-    Util Util() {
-        return plugin.getUtil();
     }
 
     short getPlotLimit(IPlayer player) {
@@ -50,11 +49,21 @@ public abstract class PlotCommand {
     }
 
 
-    protected String C(String caption) {
-        return Util().C(caption);
+    String C(String caption) {
+        return plugin.C(caption);
     }
 
+    public abstract String getName();
+
+    public abstract boolean execute(ICommandSender sender, String[] args);
+
+    public abstract String getUsage();
+
     protected boolean isAdvancedLogging() {
-        return serverBridge.getConfig().getBoolean("AdvancedLogging");
+        return plugin.getConfig().getBoolean("AdvancedLogging");
+    }
+
+    public List getAliases() {
+        return Collections.emptyList();
     }
 }

@@ -1,13 +1,29 @@
 package com.worldcretornica.plotme_core.storage;
 
+import com.worldcretornica.plotme_core.PlayerList;
+import com.worldcretornica.plotme_core.Plot;
+import com.worldcretornica.plotme_core.PlotId;
+import com.worldcretornica.plotme_core.PlotMapInfo;
+import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ILocation;
+import com.worldcretornica.plotme_core.utils.UUIDFetcher;
 
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class Database {
 
+    public static final String SELECT_INTERNAL_ID = "SELECT id FROM plotmecore_plots WHERE plotX = ? AND plotZ = ?";
+    private static final String SELECT_PLOT_COUNT = "SELECT Count(*) as plotCount FROM plotmecore_plots WHERE LOWER(world) = ?";
     public final PlotMe_Core plugin;
 
     public Connection connection;
@@ -49,106 +65,432 @@ public abstract class Database {
         return connection;
     }
 
-    public void createTables() {
-        Connection connection = getConnection();
-        try (Statement statement = connection.createStatement()) {
-            //Main Plot Storage Table
-            String PLOT_TABLE = "CREATE TABLE IF NOT EXISTS `plotmecore_plots` ("
-                    + "`id` INTEGER PRIMARY KEY UNIQUE NOT NULL,"
-                    + "`plotX` INTEGER NOT NULL,"
-                    + "`plotZ` INTEGER NOT NULL,"
-                    + "`world` VARCHAR(32) NOT NULL,"
-                    + "`ownerID` BLOB(16) NOT NULL,"
-                    + "`owner` VARCHAR(32) NOT NULL,"
-                    + "`biome` VARCHAR(32) DEFAULT 'PLAINS' NOT NULL,"
-                    + "`finished` BOOLEAN NOT NULL DEFAULT '0',"
-                    + "`finishedDate` VARCHAR(16),"
-                    + "`forSale` BOOLEAN NOT NULL DEFAULT '0',"
-                    + "`price` DOUBLE NOT NULL DEFAULT '0',"
-                    + "`protected` BOOLEAN NOT NULL DEFAULT '0',"
-                    + "`expiredDate` VARCHAR(16),"
-                    + "`topX` INTEGER NOT NULL DEFAULT '0',"
-                    + "`topZ` INTEGER NOT NULL DEFAULT '0',"
-                    + "`bottomX` INTEGER NOT NULL DEFAULT '0',"
-                    + "`bottomZ` INTEGER NOT NULL DEFAULT '0',"
-                    + "`plotName` VARCHAR(32) UNIQUE,"
-                    + "`plotLikes` INTEGER NOT NULL DEFAULT '0',"
-                    + "`homeX` INTEGER NOT NULL,"
-                    + "`homeY` INTEGER NOT NULL,"
-                    + "`homeZ` INTEGER NOT NULL,"
-                    + "`homeName` VARCHAR(32)"
-                    + ");";
-            statement.executeUpdate(PLOT_TABLE);
-            connection.commit();
-            //Plot Allowed table
-            String PLOT_ALLOWED = "CREATE TABLE IF NOT EXISTS `plotmecore_allowed` ("
-                    //Not used yet but included if needed in the future
-                    + "`id` INTEGER PRIMARY KEY UNIQUE NOT NULL,"
-                    /*`plot_id` is the internal plot id that is in the first collumn of the main plot table.
-                    This is not to be confused with the plot id that the user is used to seeing.
-                    */
-                    + "`plot_id` VARCHAR(32) NOT NULL,"
-                    // `allowedID` will be null if we add or deny a group to the plot.
-                    + "`allowedID` BLOB(16),"
-                    //The name of the user or group that is allowed
-                    + "`allowed` VARCHAR(32) NOT NULL"
-                    + ");";
-            statement.executeUpdate(PLOT_ALLOWED);
-            connection.commit();
-            //Plot Denied table
-            String PLOT_DENIED = "CREATE TABLE IF NOT EXISTS `plotmecore_denied` ("
-                    //Not used yet but included if needed in the future
-                    + "`id` INTEGER PRIMARY KEY UNIQUE NOT NULL,"
-                    /*`plot_id` is the internal plot id that is in the first collumn of the main plot table.
-                    This is not to be confused with the plot id that the user is used to seeing.
-                    */
-                    + "`plot_id` VARCHAR(32) NOT NULL,"
-                    // `allowedID` will be null if we add or deny a group to the plot.
-                    + "`deniedID` BLOB(16),"
-                    //The name of the user or group that is allowed
-                    + "`denied` VARCHAR(32) NOT NULL"
-                    + ");";
-            statement.executeUpdate(PLOT_DENIED);
-            connection.commit();
-            String PLOT_LIKES = "CREATE TABLE IF NOT EXISTS `plotmecore_likes` ("
-                    + "`id` INTEGER PRIMARY KEY UNIQUE NOT NULL,"
-                    + "`plot_id` VARCHAR(32) NOT NULL,"
-                    + "`playerID` BLOB(16),"
-                    + "`player` VARCHAR(32) NOT NULL"
-                    + ");";
-            statement.executeUpdate(PLOT_LIKES);
-            connection.commit();
-            String METADATA_TABLE = "CREATE TABLE IF NOT EXISTS `plotmecore_metadata` ("
-                    + "`id` INTEGER PRIMARY KEY UNIQUE NOT NULL,"
-                    + "`plot_id` VARCHAR(32) NOT NULL,"
-                    + "`pluginName` NVARCHAR(100) NOT NULL,"
-                    + "`propertyBame` NVARCHAR(100) NOT NULL,"
-                    + "`propertyValue` NVARCHAR(255)"
-                    + ");";
-            statement.executeUpdate(METADATA_TABLE);
-            connection.commit();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    public abstract void createTables();
 
     public void legacyConverter() {
         plugin.getServerBridge().runTaskAsynchronously(new Runnable() {
             @Override
             public void run() {
-                Connection connection = getConnection();
-                try (Statement statement = connection.createStatement()) {
-                    statement.executeUpdate("INSERT INTO `plotmecore_plots` (plotX, plotZ, world, ownerID, owner, biome, finished, finishedDate, "
+                try (Statement statement = connection.createStatement();
+                        PreparedStatement statement2 = connection.prepareStatement(SELECT_INTERNAL_ID
+                                + " AND LOWER(world) = ?"); PreparedStatement statement3 = connection.prepareStatement(
+                        "INSERT INTO plotmecore_allowed (plot_id, allowedID, allowed) VALUES (?,?,?)");
+                        PreparedStatement statement4 = connection
+                                .prepareStatement("INSERT INTO plotmecore_denied (plot_id, deniedID, denied) VALUES (?,?,?)")) {
+                    statement.executeUpdate("INSERT INTO plotmecore_plots (plotX, plotZ, world, ownerID, owner, biome, finished, finishedDate, "
                             + "forSale, price, protected, expiredDate, topX,topZ, bottomX, bottomZ) SELECT idX,idZ,world,ownerid,owner,biome,"
                             + "finished,finisheddate,forsale,customprice,protected,expireddate,topX,topZ,bottomX,bottomZ FROM `plotmePlots` WHERE "
                             + "ownerid IS NOT NULL");
+                    statement.executeUpdate("");
+                    connection.commit();
+                    ResultSet allowedResult = statement.executeQuery("SELECT * FROM plotmeallowed");
+                    while (allowedResult.next()) {
+                        int idX = allowedResult.getInt("idX");
+                        int idZ = allowedResult.getInt("idZ");
+                        String world = allowedResult.getString("world").toLowerCase();
+                        statement2.setInt(1, idX);
+                        statement2.setInt(2, idZ);
+                        statement2.setString(3, world);
+                        ResultSet resultSet = statement2.executeQuery();
+                        while (resultSet.next()) {
+                            statement3.executeQuery("INSERT INTO plotmecore_allowed (plot_id, allowedID, allowed) VALUES (" + resultSet.getInt(1)
+                                    + "," + allowedResult.getBytes("playerid") + "," + allowedResult.getString("player") + ")");
+                        }
+                        resultSet.close();
+                    }
+                    connection.commit();
+                    allowedResult.close();
+                    ResultSet deniedResult = statement.executeQuery("SELECT * FROM plotmedenied");
+                    while (deniedResult.next()) {
+                        int idX = deniedResult.getInt("idX");
+                        int idZ = deniedResult.getInt("idZ");
+                        String world = deniedResult.getString("world").toLowerCase();
+                        statement2.setInt(1, idX);
+                        statement2.setInt(2, idZ);
+                        statement2.setString(3, world);
+                        ResultSet resultSet = statement2.executeQuery();
+                        while (resultSet.next()) {
+                            statement4.executeQuery("INSERT INTO plotmecore_denied (plot_id, allowedID, allowed) VALUES (" + resultSet.getInt(1)
+                                    + "," + deniedResult.getString("playerid") + "," + deniedResult.getString("player") + ")");
+                        }
+                        resultSet.close();
+                    }
+                    deniedResult.close();
+                    connection.commit();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
 
             }
         });
+    }
 
+    /**
+     * Get the number of plots in the world
+     * @param world plotworld to check
+     * @return number of plots in the world
+     */
+    public int getPlotCount(String world) {
+        int plotCount = 0;
+        try (PreparedStatement ps = getConnection().prepareStatement(SELECT_PLOT_COUNT)) {
+
+            ps.setString(1, world);
+
+            ResultSet setNbPlots = ps.executeQuery();
+            if (setNbPlots.next()) {
+                plotCount = setNbPlots.getInt(1);
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().severe("PlotCount Exception :");
+            plugin.getLogger().severe(ex.getMessage());
+        }
+        return plotCount;
+    }
+
+    public int getPlotCount(String world, UUID uuid) {
+        int plotCount = 0;
+        try (PreparedStatement ps = getConnection().prepareStatement(SELECT_PLOT_COUNT + " AND ownerID = ?")) {
+
+            ps.setString(1, world);
+            ps.setBytes(2, UUIDFetcher.toBytes(uuid));
+
+            ResultSet setNbPlots = ps.executeQuery();
+            if (setNbPlots.next()) {
+                plotCount = setNbPlots.getInt(1);
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().severe("PlotCount Exception :");
+            plugin.getLogger().severe(ex.getMessage());
+        }
+        return plotCount;
+    }
+
+    public void addPlot(Plot plot, PlotId id, ILocation plotTopLoc, ILocation plotBottomLoc) {
+        try (PreparedStatement ps = getConnection().prepareStatement(
+                "INSERT INTO plotmecore_plots(plotX, plotZ, world, ownerID, owner, biome, finished, finishedDate, forSale, price, protected, "
+                        + "expiredDate, topX, topZ, bottomX, bottomZ, plotLikes) VALUES (?,?,?,?,?,?,?,?,"
+                        + "?,?,?,?,?,?,?,?,?)");
+                PreparedStatement ps2 = getConnection().prepareStatement(SELECT_INTERNAL_ID)) {
+
+            ps.setInt(1, id.getX());
+            ps.setInt(2, id.getZ());
+            ps.setString(3, plot.getWorld().toLowerCase());
+            ps.setString(4, plot.getOwnerId().toString());
+            ps.setString(5, plot.getOwner());
+            ps.setString(6, plot.getBiome());
+            ps.setBoolean(7, plot.isFinished());
+            ps.setString(8, plot.getFinishedDate());
+            ps.setBoolean(9, plot.isForSale());
+            ps.setDouble(10, plot.getPrice());
+            ps.setBoolean(11, plot.isProtected());
+            ps.setDate(12, plot.getExpiredDate());
+            ps.setInt(13, plotTopLoc.getBlockX());
+            ps.setInt(14, plotTopLoc.getBlockZ());
+            ps.setInt(15, plotBottomLoc.getBlockX());
+            ps.setInt(16, plotBottomLoc.getBlockZ());
+            ps.setInt(17, plot.getLikes());
+            ps.executeUpdate();
+            getConnection().commit();
+            ps2.setInt(1, id.getX());
+            ps2.setInt(2, id.getZ());
+            ResultSet getID = ps2.executeQuery();
+            while (getID.next()) {
+                plot.setInternalID(getID.getInt(1));
+            }
+
+        } catch (SQLException ex) {
+            plugin.getLogger().severe("Insert Exception :");
+            plugin.getLogger().severe(ex.getMessage());
+        }
+    }
+
+    private void savePlotProperty(int internalID, String pluginname, String propertyname, String s) {
+
+    }
+
+    public void addPlotDenied(String player, int plotInternalID) {
+        try (PreparedStatement ps = getConnection().prepareStatement("INSERT INTO plotmecore_denied (plot_id, denied) VALUES (?,?)")) {
+            ps.setInt(1, plotInternalID);
+            ps.setString(2, player);
+            ps.execute();
+            getConnection().commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error adding denied data for plot with internal id " + plotInternalID);
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public void addPlotAllowed(String player, int plotInternalID) {
+        try (PreparedStatement ps = getConnection().prepareStatement("INSERT INTO plotmecore_allowed (plot_id, allowed, access) VALUES(?,?,?)")) {
+            ps.setInt(1, plotInternalID);
+            ps.setString(2, player);
+            ps.setInt(3, 0);
+            ps.execute();
+            getConnection().commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error adding allowed data for plot with internal id " + plotInternalID);
+            e.printStackTrace();
+        }
+    }
+
+    public void addPlotTrusted(String player, int plotInternalID) {
+        Connection connection = getConnection();
+        try (PreparedStatement ps = connection.prepareStatement("INSERT INTO plotmecore_allowed (plot_id, allowed, access) VALUES(?,?,?)")) {
+            ps.setInt(1, plotInternalID);
+            ps.setString(2, player);
+            ps.setInt(3, 1);
+            ps.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error adding allowed data for plot with internal id " + plotInternalID);
+            e.printStackTrace();
+        }
+    }
+
+    public void deletePlot(int internalID) {
+        Connection connection = getConnection();
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM plotmecore_allowed WHERE plot_id = ?")) {
+            ps.setInt(1, internalID);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error deleting allowed data for plot with internal id " + internalID);
+            e.printStackTrace();
+        }
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM plotmecore_metadata WHERE plot_id = ?")) {
+            ps.setInt(1, internalID);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error deleting metadata for plot with internal id " + internalID);
+            e.printStackTrace();
+        }
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM plotmecore_likes WHERE plot_id = ?")) {
+            ps.setInt(1, internalID);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error deleting likes data for plot with internal id " + internalID);
+            e.printStackTrace();
+        }
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM plotmecore_denied WHERE plot_id = ?")) {
+            ps.setInt(1, internalID);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error deleting denied data for plot with internal id " + internalID);
+            e.printStackTrace();
+        }
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM plotmecore_plots WHERE id = ?")) {
+            ps.setInt(1, internalID);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error deleting plot with internal id " + internalID);
+            e.printStackTrace();
+        }
+    }
+
+    public List<Plot> getPlayerPlots(String name, UUID uuid) {
+        return null;
+    }
+
+    public void updatePlotsNewUUID(UUID uuid, String name) {
+
+    }
+
+    public List<Plot> getOwnedPlots(String name, UUID uuid, String playerName) {
+        return null;
+    }
+
+    public void loadPlotsAsynchronously(final String world) {
+        plugin.getServerBridge().runTaskAsynchronously(new Runnable() {
+            @Override
+            public void run() {
+                plugin.getLogger().info("Starting to load plots for world " + world);
+
+                HashMap<PlotId, Plot> plots = getPlots(world);
+
+                PlotMapInfo pmi = PlotMeCoreManager.getInstance().getMap(world);
+
+                for (PlotId id : plots.keySet()) {
+                    pmi.addPlot(id, plots.get(id));
+                    plugin.getServerBridge().getEventFactory()
+                            .callPlotLoadedEvent(plugin.getServerBridge().getWorld(world), plots.get(id));
+                }
+                plugin.getServerBridge().getEventFactory().callPlotWorldLoadEvent(world, pmi.getNbPlots());
+            }
+
+            private HashMap<PlotId, Plot> getPlots(String world) {
+                return null;
+            }
+        });
+    }
+
+    public Plot getPlot(String world, PlotId id) {
+        int idX = id.getX();
+        int idZ = id.getZ();
+        Plot plot = null;
+        Connection connection = getConnection();
+        try (PreparedStatement statementPlot = connection.prepareStatement("SELECT * FROM plotmecore_plots WHERE LOWER(world) = ? AND plotX = ? and "
+                + "plotZ = ?");
+                PreparedStatement statementAllowed = connection.prepareStatement("SELECT * FROM plotmecore_allowed WHERE id = ?");
+                PreparedStatement statementDenied = connection.prepareStatement("SELECT * FROM plotmecore_denied WHERE id = ?");
+                PreparedStatement statementMetadata = connection.prepareStatement("SELECT * FROM plotmecore_metadata WHERE id = ?")) {
+            statementPlot.setString(1, world);
+            statementPlot.setInt(2, idX);
+            statementPlot.setInt(3, idZ);
+            ResultSet setPlots = statementPlot.executeQuery();
+            if (setPlots.next()) {
+                int internalID = setPlots.getInt("id");
+                String byOwner = setPlots.getString("ownerID");
+                UUID ownerId = UUID.fromString(byOwner);
+                String owner = setPlots.getString("owner");
+                String biome = setPlots.getString("biome");
+                boolean finished = setPlots.getBoolean("finished");
+                String finishedDate = setPlots.getString("finishedDate");
+                boolean forSale = setPlots.getBoolean("forSale");
+                double price = setPlots.getDouble("price");
+                boolean protect = setPlots.getBoolean("protected");
+                Date expiredDate = setPlots.getDate("expiredDate");
+                String plotName = setPlots.getString("plotName");
+                int plotLikes = setPlots.getInt("plotLikes");
+
+                PlayerList allowed = new PlayerList();
+                PlayerList trusted = new PlayerList();
+                PlayerList denied = new PlayerList();
+                Map<String, Map<String, String>> metadata = new HashMap<>();
+
+                //Get Allowed Players
+                statementAllowed.setInt(1, internalID);
+
+                ResultSet setAllowed = statementAllowed.executeQuery();
+
+                while (setAllowed.next()) {
+                    int accessLevel = setAllowed.getInt("access");
+                    //This is for adding players
+                    if (accessLevel == 1) {
+                        allowed.add(setAllowed.getString("allowed"));
+                    } else if (accessLevel == 2) { //If the player is trusted only
+                        trusted.add(setAllowed.getString("allowed"));
+                    }
+                }
+                setAllowed.close();
+
+                //Get Denied Players
+                statementDenied.setInt(1, internalID);
+
+                ResultSet setDenied = statementDenied.executeQuery();
+
+                while (setDenied.next()) {
+                    byte[] byPlayerId = setDenied.getBytes("deniedID");
+                    if (byPlayerId == null) {
+                        denied.put(setDenied.getString("denied"));
+                    } else {
+                        denied.add(UUIDFetcher.fromBytes(byPlayerId).toString());
+                    }
+                }
+                setDenied.close();
+
+                statementMetadata.setInt(1, internalID);
+
+                ResultSet setMetadata = statementMetadata.executeQuery();
+
+                while (setMetadata.next()) {
+                    String pluginname = setMetadata.getString("pluginName");
+                    String propertyname = setMetadata.getString("propertyName");
+                    String propertyvalue = setMetadata.getString("propertyValue");
+                    if (!metadata.containsKey(pluginname)) {
+                        metadata.put(pluginname, new HashMap<String, String>());
+                    }
+                    metadata.get(pluginname).put(propertyname, propertyvalue);
+                }
+
+                setMetadata.close();
+
+                plot = new Plot(plugin, owner, ownerId, world, biome, expiredDate, finished, allowed,
+                        id, price, forSale, finishedDate, protect, denied, metadata, plotLikes, plotName);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return plot;
+    }
+
+    public void updatePlot(PlotId id, String name, String biome, Object name1) {
+        //TODO Get rid of this ugly method
+    }
+
+    public void plotConvertToUUIDAsynchronously() {
+
+    }
+
+    public void coreDatabaseUpdate() {
+
+    }
+
+    public void deletePlotAllowed(int internalID, String name) {
+        Connection connection = getConnection();
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM plotmecore_allowed WHERE plot_id = ? AND allowed = ?")) {
+            statement.setInt(1, internalID);
+            statement.setString(2, name);
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * This deletes all the players added to this plot. Including trusted players.
+     * @param internalID
+     */
+    public void deleteAllAllowed(int internalID) {
+        Connection connection = getConnection();
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM plotmecore_allowed WHERE plot_id = ?")) {
+            statement.setInt(1, internalID);
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void deletePlotDenied(int internalID, String name) {
+        Connection connection = getConnection();
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM plotmecore_denied WHERE plot_id = ? AND denied = ?")) {
+            statement.setInt(1, internalID);
+            statement.setString(2, name);
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteAllDenied(int internalID) {
+        Connection connection = getConnection();
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM plotmecore_denied WHERE deniedID = ?")) {
+            statement.setInt(1, internalID);
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    public boolean savePlotProperty(PlotId id, String world, String pluginname, String property, String value) {
+        return false;
+    }
+
+    public List<Plot> getExpiredPlots(String name, int i, int i1) {
+        return null;
     }
 }

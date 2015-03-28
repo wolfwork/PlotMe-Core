@@ -4,10 +4,14 @@ import com.worldcretornica.plotme_core.PermissionNames;
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotTeleportEvent;
+
+import java.util.Collections;
+import java.util.List;
 
 public class CmdTP extends PlotCommand {
 
@@ -15,18 +19,27 @@ public class CmdTP extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player, String[] args) {
+    @Override
+    public List getAliases() {
+        return Collections.singletonList("teleport");
+    }
+
+    public String getName() {
+        return "tp";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.ADMIN_TP)) {
-            if (manager.isPlotWorld(player) || serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
+            if (manager.isPlotWorld(player) || plugin.getConfig().getBoolean("allowWorldTeleport")) {
                 if (args.length == 2 || args.length == 3) {
-                    String id = args[1];
                     IWorld world;
                     if (args.length == 3) {
 
                         world = serverBridge.getWorld(args[2]);
 
                         if (world == null) {
-                            player.sendMessage("§c" + C("MsgNoPlotworldFound"));
+                            player.sendMessage(C("MsgNoPlotworldFound"));
                             return true;
                         }
                     } else if (manager.isPlotWorld(player)) {
@@ -35,45 +48,42 @@ public class CmdTP extends PlotCommand {
                         world = manager.getFirstWorld();
                     }
 
-                    if (manager.isValidId(world, id)) {
-                        PlotId id2 = new PlotId(id);
+                    if (PlotId.isValidID(args[1])) {
+                        PlotId id2 = new PlotId(args[1]);
                         if (!manager.isPlotWorld(world)) {
-                            player.sendMessage("§c" + C("MsgNoPlotworldFound"));
-                        } else if (!manager.isValidId(world, id)) {
-                            if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
-                                player.sendMessage(
-                                        C("WordUsage") + ": §c/plotme tp <ID> [" + C("WordWorld") + "] §r" + C("WordExample")
-                                                + ": §c/plotme tp 5;-1 ");
-                            } else {
-                                player.sendMessage(C("WordUsage") + ": §c/plotme tp <ID> §r" + C("WordExample") + ": §c/plotme tp 5;-1 ");
-                            }
-                            return true;
+                            player.sendMessage(C("MsgNoPlotworldFound"));
                         } else {
                             ILocation location = manager.getPlotHome(world, id2);
                             Plot plot = manager.getPlotById(id2, world);
-                            InternalPlotTeleportEvent
-                                    event =
-                                    serverBridge.getEventFactory().callPlotTeleportEvent(plugin, world, plot, player, location, id);
+                            InternalPlotTeleportEvent event =
+                                    serverBridge.getEventFactory().callPlotTeleportEvent(world, plot, player, location, id2);
 
                             if (!event.isCancelled()) {
                                 player.setLocation(location);
                             }
                         }
                     }
-                } else if (serverBridge.getConfig().getBoolean("allowWorldTeleport")) {
-                    player.sendMessage(
-                            C("WordUsage") + ": §c/plotme tp <ID> [" + C("WordWorld") + "] §r" + C("WordExample") + ": §c/plotme tp 5;-1 ");
                 } else {
-                    player.sendMessage(C("WordUsage") + ": §c/plotme tp <ID> §r" + C("WordExample") + ": §c/plotme tp 5;-1 ");
+                    player.sendMessage(getUsage());
+                    return true;
                 }
             } else {
-                player.sendMessage("§c" + C("MsgNotPlotWorld"));
+                player.sendMessage(C("MsgNotPlotWorld"));
                 return true;
             }
         } else {
-            player.sendMessage("§c" + C("MsgPermissionDenied"));
             return false;
         }
         return true;
     }
+
+    @Override
+    public String getUsage() {
+        if (plugin.getConfig().getBoolean("allowWorldTeleport")) {
+            return C("WordUsage") + ": /plotme tp <ID> [" + C("WordWorld") + "]";
+        } else {
+            return C("WordUsage") + ": /plotme tp <ID> ";
+        }
+    }
+
 }

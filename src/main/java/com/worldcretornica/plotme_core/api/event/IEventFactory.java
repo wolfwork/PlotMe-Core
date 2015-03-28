@@ -2,7 +2,6 @@ package com.worldcretornica.plotme_core.api.event;
 
 import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
-import com.worldcretornica.plotme_core.api.IBiome;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
@@ -10,6 +9,9 @@ import com.worldcretornica.plotme_core.api.IWorld;
 
 import java.util.Map;
 
+/**
+ * PlotMe Event Interface.
+ */
 public interface IEventFactory {
 
     InternalPlotCreateEvent callPlotCreatedEvent(IWorld world, PlotId id, IPlayer creator);
@@ -22,7 +24,7 @@ public interface IEventFactory {
 
     InternalPlotResetEvent callPlotResetEvent(IWorld world, Plot plot, ICommandSender commandSender);
 
-    InternalPlotBiomeChangeEvent callPlotBiomeChangeEvent(IWorld world, Plot plot, IPlayer player, IBiome biome);
+    InternalPlotBiomeChangeEvent callPlotBiomeChangeEvent(IWorld world, Plot plot, IPlayer player, String biome);
 
     InternalPlotBuyEvent callPlotBuyEvent(IWorld world, Plot plot, IPlayer player, double price);
 
@@ -32,13 +34,11 @@ public interface IEventFactory {
 
     InternalPlotDoneChangeEvent callPlotDoneEvent(IWorld world, Plot plot, IPlayer player, boolean done);
 
-    InternalPlotTeleportHomeEvent callPlotTeleportHomeEvent(IWorld world, Plot plot, IPlayer player);
+    InternalPlotTeleportHomeEvent callPlotTeleportHomeEvent(IWorld world, Plot plot, IPlayer player, ILocation location);
 
     InternalPlotTeleportMiddleEvent callPlotTeleportMiddleEvent(IWorld world, Plot plot, IPlayer player, ILocation location);
 
     InternalPlotProtectChangeEvent callPlotProtectChangeEvent(IWorld world, Plot plot, IPlayer player, boolean protect);
-
-    InternalPlotReloadEvent callPlotReloadEvent();
 
     InternalPlotAddAllowedEvent callPlotAddAllowedEvent(IWorld world, Plot plot, IPlayer player, String allowed);
 
@@ -52,7 +52,7 @@ public interface IEventFactory {
 
     InternalPlotOwnerChangeEvent callPlotOwnerChangeEvent(IWorld world, Plot plot, IPlayer player, String newOwner);
 
-    InternalPlotTeleportEvent callPlotTeleportEvent(IWorld world, Plot plot, IPlayer player, ILocation location, String PlotId);
+    InternalPlotTeleportEvent callPlotTeleportEvent(IWorld world, Plot plot, IPlayer player, ILocation location, PlotId PlotId);
 
     InternalPlotWorldLoadEvent callPlotWorldLoadEvent(String worldName, int nbPlots);
 }

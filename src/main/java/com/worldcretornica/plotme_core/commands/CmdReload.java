@@ -9,17 +9,23 @@ public class CmdReload extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(ICommandSender sender) {
+    public String getName() {
+        return "reload";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
 
         if (sender.hasPermission("plotme.admin.reload")) {
-            serverBridge.getEventFactory().callPlotReloadEvent();
-
             plugin.reload();
             sender.sendMessage(C("MsgReloadedSuccess"));
-
             return true;
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme reload";
     }
 }

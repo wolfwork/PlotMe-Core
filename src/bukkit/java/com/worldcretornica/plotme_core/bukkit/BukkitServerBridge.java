@@ -1,19 +1,13 @@
 package com.worldcretornica.plotme_core.bukkit;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.worldcretornica.plotme_core.PlotMapInfo;
-import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotWorldEdit;
-import com.worldcretornica.plotme_core.api.IBiome;
-import com.worldcretornica.plotme_core.api.IConfigSection;
 import com.worldcretornica.plotme_core.api.IMaterial;
 import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.IEventFactory;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitConfigSection;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitMaterial;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitOfflinePlayer;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
@@ -24,29 +18,19 @@ import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotWorldEditListen
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -56,29 +40,15 @@ public class BukkitServerBridge extends IServerBridge {
     private final IEventFactory eventFactory;
     private Economy economy;
     private PlotWorldEdit plotworldedit;
-    private MultiverseWrapper multiverse;
 
     public BukkitServerBridge(PlotMe_CorePlugin instance) {
         plugin = instance;
         eventFactory = new BukkitEventFactory();
     }
 
-    private static MultiverseWrapper getMultiverseWrapper() {
-        if (Bukkit.getPluginManager().isPluginEnabled("Multiverse-Core")) {
-            return new MultiverseWrapper((JavaPlugin) Bukkit.getPluginManager().getPlugin("Multiverse-Core"));
-        } else {
-            return null;
-        }
-    }
-
     @Override
     public IOfflinePlayer getOfflinePlayer(UUID uuid) {
         return new BukkitOfflinePlayer(Bukkit.getOfflinePlayer(uuid));
-    }
-
-    @Override
-    public void reloadConfig() {
-        plugin.reloadConfig();
     }
 
     /**
@@ -207,20 +177,15 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-    public IBiome getBiome(String name) {
-        Biome biome = null;
+    public boolean doesBiomeExist(String name) {
 
-        for (Biome bio : Biome.values()) {
-            if (bio.name().equalsIgnoreCase(name)) {
-                biome = bio;
+        for (Biome biome : Biome.values()) {
+            if (biome.name().equalsIgnoreCase(name)) {
+                return true;
             }
         }
 
-        if (biome == null) {
-            return null;
-        } else {
-            return new BukkitBiome(biome);
-        }
+        return false;
     }
 
     @Override
@@ -251,7 +216,6 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-
     public IOfflinePlayer getOfflinePlayer(String player) {
         @SuppressWarnings("deprecation")
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
@@ -265,49 +229,8 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-    public InputStream getResource(String path) {
-        return plugin.getResource(path);
-    }
-
-    @Override
-    public String getDataFolder() {
-        return plugin.getDataFolder().getAbsolutePath();
-    }
-
-    @Override
-
-    public IConfigSection getConfig() {
-        return new BukkitConfigSection(plugin);
-    }
-
-    @Override
-    public IConfigSection getConfig(String file) {
-
-        File configFile = new File(plugin.getDataFolder().getAbsolutePath(), file);
-        YamlConfiguration config = new YamlConfiguration();
-
-        try {
-            config.load(configFile);
-        } catch (FileNotFoundException ignored) {
-        } catch (IOException e) {
-            plugin.getLogger().severe("Can't read configuration file");
-            e.printStackTrace();
-        } catch (InvalidConfigurationException e) {
-            plugin.getLogger().severe("Invalid configuration format");
-            e.printStackTrace();
-        }
-
-        return new BukkitConfigSection(plugin, config);
-    }
-
-    @Override
-    public void saveResource(String fileName, boolean replace) {
-        plugin.saveResource(fileName, replace);
-    }
-
-    @Override
-    public boolean addMultiverseWorld(String worldName, String seed, String generator) {
-        return getMultiverseWrapper().getMVWorldManager().addWorld(worldName, seed, generator);
+    public File getDataFolder() {
+        return plugin.getDataFolder();
     }
 
     @Override
@@ -357,23 +280,15 @@ public class BukkitServerBridge extends IServerBridge {
         return worlds;
     }
 
-    /**
-     * Please do not use this method if you need to create a plotworld
-     * @param worldName Name of the Plotworld
-     * @param generator PlotMe Generator
-     * @param args
-     * @return
-     */
+/*
     @Override
     public boolean createPlotWorld(String worldName, String generator, Map<String, String> args) {
         //Get a seed
-        Long seed = new Random().nextLong();
+        long seed = new Random().nextLong();
 
         //Check if we have multiverse
-        if (getMultiverse() == null) {
-            if (Bukkit.getPluginManager().isPluginEnabled("Multiverse-Core")) {
-                setMultiverse((JavaPlugin) Bukkit.getPluginManager().getPlugin("Multiverse-Core"));
-            }
+        if (getMultiverse() == null && Bukkit.getPluginManager().isPluginEnabled("Multiverse-Core")) {
+            setMultiverse((JavaPlugin) Bukkit.getPluginManager().getPlugin("Multiverse-Core"));
         }
 
         //Do we have one of them
@@ -383,20 +298,22 @@ public class BukkitServerBridge extends IServerBridge {
         }
 
         //Find generator
-       /* IPlotMe_ChunkGenerator plotMeGenerator = plugin.getServerObjectBuilder().getPlotMeGenerator(generator, worldName);
+       */
+/* IPlotMe_ChunkGenerator plotMeGenerator = plugin.getServerObjectBuilder().getPlotMeGenerator(generator, worldName);
 
         //Make generator create settings
         if (plotMeGenerator == null) {
             getLogger().info(plugin.getAPI().getUtil().C("ErrCannotFindWorldGen") + " '" + generator + "'");
             return false;
         }
-        if (!plotMeGenerator.getManager().createConfig(worldName, args)) { //Create the generator configurations
+        if (!plotMeGenerator.getManager().createFile(worldName, args)) { //Create the generator configurations
             getLogger().info(plugin.getAPI().getUtil().C("ErrCannotCreateGen1") + " '" + generator + "' " + plugin.getAPI().getUtil()
                     .C("ErrCannotCreateGen2"));
             return false;
-        }*/
+        }*//*
 
-        PlotMapInfo tempPlotInfo = new PlotMapInfo(plugin.getAPI(), worldName);
+
+        PlotMapInfo tempPlotInfo = new PlotMapInfo(plugin.getAPI(), config, worldName);
 
         tempPlotInfo.setPlotAutoLimit(Integer.parseInt(args.get("PlotAutoLimit")));
         tempPlotInfo.setDaysToExpiration(Integer.parseInt(args.get("DaysToExpiration")));
@@ -426,7 +343,7 @@ public class BukkitServerBridge extends IServerBridge {
         if (getMultiverse() != null) {
             boolean success = false;
             if (getMultiverse().isEnabled()) {
-                success = plugin.getServerObjectBuilder().addMultiverseWorld(worldName, seed.toString(), generator);
+                success = plugin.getServerObjectBuilder().addMultiverseWorld(worldName, String.valueOf(seed), generator);
 
                 if (!success) {
                     getLogger().info(plugin.getAPI().getUtil().C("ErrCannotCreateMV"));
@@ -439,49 +356,32 @@ public class BukkitServerBridge extends IServerBridge {
 
         return false;
     }
-
-    private MultiverseWrapper getMultiverse() {
-        return multiverse;
-    }
-
-    private void setMultiverse(JavaPlugin multiverse) {
-        this.multiverse = new MultiverseWrapper(multiverse);
-    }
+*/
 
     @Override
     public IMaterial getMaterial(String string) {
         return new BukkitMaterial(Material.valueOf(string));
     }
 
-    @Override
-    public IConfigSection loadDefaultConfig(String world) {
-        ConfigurationSection defaultCS = getDefaultWorld();
-        ConfigurationSection configSection;
-        if (plugin.getConfig().contains(world)) {
-            configSection = plugin.getConfig().getConfigurationSection(world);
-        } else {
-            plugin.getConfig().set(world, defaultCS);
-            plugin.saveConfig();
-            configSection = plugin.getConfig().getConfigurationSection(world);
-        }
-        for (String path : defaultCS.getKeys(true)) {
-            configSection.addDefault(path, defaultCS.get(path));
-        }
-        return new BukkitConfigSection(plugin, plugin.getConfig(), configSection);
-    }
-
-    private ConfigurationSection getDefaultWorld() {
-        InputStream defConfigStream = plugin.getResource("default-world.yml");
-        InputStreamReader isr;
-        try {
-            isr = new InputStreamReader(defConfigStream, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            isr = new InputStreamReader(defConfigStream);
-        }
-        return YamlConfiguration.loadConfiguration(isr);
-    }
-
     public void clearBukkitPlayerMap() {
         plugin.getBukkitPlayerMap().clear();
+    }
+
+    public File getWorldFolder() {
+        return plugin.getServer().getWorldContainer();
+    }
+
+    @Override
+    public List<IOfflinePlayer> getOfflinePlayers() {
+        List<IOfflinePlayer> list = new ArrayList<>();
+        for (OfflinePlayer player : plugin.getServer().getOfflinePlayers()) {
+            list.add(new BukkitOfflinePlayer(player));
+        }
+        return list;
+    }
+
+    @Override
+    public String addColor(char c, String string) {
+        return ChatColor.translateAlternateColorCodes(c, string);
     }
 }

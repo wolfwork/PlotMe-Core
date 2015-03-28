@@ -5,19 +5,12 @@ import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotResetEvent;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitCommandSender;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
-import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 
 public class PlotResetEvent extends PlotEvent implements Cancellable {
 
     private final InternalPlotResetEvent event;
-
-    public PlotResetEvent(World world, Plot plot, CommandSender reseter) {
-        super(plot, world);
-        event = new InternalPlotResetEvent(new BukkitWorld(world), plot, new BukkitCommandSender(reseter));
-    }
 
     public PlotResetEvent(IWorld world, Plot plot, ICommandSender reseter) {
         super(plot, world);

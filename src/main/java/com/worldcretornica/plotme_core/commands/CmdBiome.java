@@ -5,10 +5,10 @@ import com.worldcretornica.plotme_core.Plot;
 import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
+import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotBiomeChangeEvent;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBiome;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 public class CmdBiome extends PlotCommand {
@@ -17,23 +17,30 @@ public class CmdBiome extends PlotCommand {
         super(instance);
     }
 
-    public boolean exec(IPlayer player, String[] args) {
+    public String getName() {
+        return "biome";
+    }
+
+    public boolean execute(ICommandSender sender, String[] args) {
+        IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.USER_BIOME)) {
             IWorld world = player.getWorld();
             PlotMapInfo pmi = manager.getMap(world);
             if (manager.isPlotWorld(world)) {
                 PlotId id = manager.getPlotId(player);
-                if (!manager.isPlotAvailable(id, pmi)) {
+                if (id == null){
+                    return true;
+                } else if (!manager.isPlotAvailable(id, pmi)) {
 
                     if (args.length == 2) {
 
-                        BukkitBiome biome = (BukkitBiome) serverBridge.getBiome(args[1]);
+                        boolean exists = serverBridge.doesBiomeExist(args[1]);
+                        String biomeName = args[1].toUpperCase();
 
-                        if (biome == null) {
-                            player.sendMessage("§c" + args[1] + "§r " + C("MsgIsInvalidBiome"));
+                        if (!exists) {
+                            player.sendMessage(biomeName + " " + C("MsgIsInvalidBiome"));
                             return true;
                         }
-                        String biomeName = biome.getBiome().name();
 
                         Plot plot = manager.getPlotById(id, pmi);
                         String playerName = player.getName();
@@ -49,32 +56,32 @@ public class CmdBiome extends PlotCommand {
                                 double balance = serverBridge.getBalance(player);
 
                                 if (balance >= price) {
-                                    event = serverBridge.getEventFactory().callPlotBiomeChangeEvent(plugin, world, plot, player, biome);
+                                    event = serverBridge.getEventFactory().callPlotBiomeChangeEvent(world, plot, player, biomeName);
                                     if (event.isCancelled()) {
                                         return true;
                                     } else {
                                         EconomyResponse er = serverBridge.withdrawPlayer(player, price);
 
                                         if (!er.transactionSuccess()) {
-                                            player.sendMessage("§c" + er.errorMessage);
+                                            player.sendMessage(er.errorMessage);
                                             serverBridge.getLogger().warning(er.errorMessage);
                                             return true;
                                         }
                                     }
                                 } else {
-                                    player.sendMessage("§c" + C("MsgNotEnoughBiome") + " " + C("WordMissing") + " §r" + Util()
+                                    player.sendMessage(C("MsgNotEnoughBiome") + " " + C("WordMissing") + " " + plugin
                                             .moneyFormat(price - balance, false));
                                     return true;
                                 }
                             } else {
-                                event = serverBridge.getEventFactory().callPlotBiomeChangeEvent(plugin, world, plot, player, biome);
+                                event = serverBridge.getEventFactory().callPlotBiomeChangeEvent(world, plot, player, biomeName);
                             }
 
                             if (!event.isCancelled()) {
-                                plot.setBiome(biome);
-                                manager.setBiome(world, id, biome);
+                                plot.setBiome(biomeName);
+                                manager.setBiome(world, id, biomeName.toUpperCase());
 
-                                player.sendMessage(C("MsgBiomeSet") + " §9" + biomeName + " " + Util().moneyFormat(-price, true));
+                                player.sendMessage(C("MsgBiomeSet") + " " + biomeName + " " + plugin.moneyFormat(-price, true));
 
                                 if (isAdvancedLogging()) {
                                     if (price == 0) {
@@ -87,22 +94,25 @@ public class CmdBiome extends PlotCommand {
                                 }
                             }
                         } else {
-                            player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgNotYoursNotAllowedBiome"));
+                            player.sendMessage(C("MsgThisPlot") + "(" + id + ") " + C("MsgNotYoursNotAllowedBiome"));
                         }
                     }
-                } else if (id == null) {
-                    player.sendMessage("§c" + C("MsgNoPlotFound"));
                 } else {
-                    player.sendMessage("§c" + C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
+                    player.sendMessage(C("MsgThisPlot") + "(" + id + ") " + C("MsgHasNoOwner"));
                 }
             } else {
-                player.sendMessage("§c" + C("MsgNotPlotWorld"));
+                player.sendMessage(C("MsgNotPlotWorld"));
                 return true;
             }
         } else {
-            player.sendMessage("§c" + C("MsgPermissionDenied"));
             return false;
         }
         return true;
     }
+
+    @Override
+    public String getUsage() {
+        return C("WordUsage") + ": /plotme biome <" + C("WordBiome") + ">";
+    }
+
 }
