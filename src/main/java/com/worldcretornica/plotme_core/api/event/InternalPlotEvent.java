@@ -6,9 +6,10 @@ import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IWorld;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class InternalPlotEvent {
+public class InternalPlotEvent implements Event {
 
     protected final IWorld world;
     private final Plot plot;
@@ -81,11 +82,11 @@ public class InternalPlotEvent {
      *
      * @return list of people allowed
      */
-    public List<String> getAllAllowed() {
+    public HashMap<String, Integer> getAllAllowed() {
         if (getPlot() != null) {
-            return getPlot().allowed().getAllPlayers();
+            return getPlot().allowed();
         } else {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
     }
     /**
@@ -95,20 +96,6 @@ public class InternalPlotEvent {
      * @return list of people denied
      */
     public List<String> getAllDenied() {
-        if (getPlot() != null) {
-            return getPlot().denied().getAllPlayers();
-        } else {
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Returns the list of people denied from building on this plot. The
-     * function returns an empty Set if the plot is null.
-     *
-     * @return list of people denied
-     */
-    public List<String> getAllDeniedUUID() {
         if (getPlot() != null) {
             return getPlot().denied().getAllPlayers();
         } else {

@@ -7,11 +7,9 @@ import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
-import com.worldcretornica.plotme_core.api.event.IEventFactory;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitMaterial;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitOfflinePlayer;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
-import com.worldcretornica.plotme_core.bukkit.event.BukkitEventFactory;
 import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotDenyListener;
 import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotListener;
 import com.worldcretornica.plotme_core.bukkit.listener.BukkitPlotWorldEditListener;
@@ -37,13 +35,11 @@ import java.util.logging.Logger;
 public class BukkitServerBridge extends IServerBridge {
 
     private final PlotMe_CorePlugin plugin;
-    private final IEventFactory eventFactory;
     private Economy economy;
     private PlotWorldEdit plotworldedit;
 
     public BukkitServerBridge(PlotMe_CorePlugin instance) {
         plugin = instance;
-        eventFactory = new BukkitEventFactory();
     }
 
     @Override
@@ -56,7 +52,6 @@ public class BukkitServerBridge extends IServerBridge {
      * @return logger
      */
     @Override
-
     public Logger getLogger() {
         return plugin.getLogger();
     }
@@ -99,8 +94,8 @@ public class BukkitServerBridge extends IServerBridge {
                     getLogger().warning("Unable to hook to WorldEdit properly, please contact the developer of plotme with your WorldEdit version.");
                     setPlotWorldEdit(null);
                 }
-
-                pluginManager.registerEvents(new BukkitPlotWorldEditListener(we, plugin), plugin);
+                worldEdit.getWorldEdit().getEventBus().register(new PlotMeWorldEdit(plugin));
+                pluginManager.registerEvents(new BukkitPlotWorldEditListener(worldEdit, we, plugin), plugin);
             } else {
                 getLogger().warning("You are using an unsupported version of worldedit. The PlotMe WorldEdit Listener not be enabled.");
             }
@@ -161,7 +156,9 @@ public class BukkitServerBridge extends IServerBridge {
     public void setupListeners() {
         PluginManager pm = plugin.getServer().getPluginManager();
 
-        pm.registerEvents(new BukkitPlotListener(plugin), plugin);
+        BukkitPlotListener bukkitPlotListener = new BukkitPlotListener(plugin);
+        getEventBus().register(bukkitPlotListener);
+        pm.registerEvents(bukkitPlotListener, plugin);
         pm.registerEvents(new BukkitPlotDenyListener(plugin), plugin);
 
     }
@@ -223,14 +220,8 @@ public class BukkitServerBridge extends IServerBridge {
     }
 
     @Override
-
-    public IEventFactory getEventFactory() {
-        return eventFactory;
-    }
-
-    @Override
     public File getDataFolder() {
-        return plugin.getDataFolder();
+        return new File("plugins","PlotMe");
     }
 
     @Override
@@ -320,7 +311,6 @@ public class BukkitServerBridge extends IServerBridge {
         //tempPlotInfo.setAutoLinkPlots(Boolean.parseBoolean(args.get("AutoLinkPlots")));
         tempPlotInfo.setDisableExplosion(Boolean.parseBoolean(args.get("DisableExplosion")));
         tempPlotInfo.setDisableIgnition(Boolean.parseBoolean(args.get("DisableIgnition")));
-        tempPlotInfo.setUseProgressiveClear(Boolean.parseBoolean(args.get("UseProgressiveClear")));
         tempPlotInfo.setUseEconomy(Boolean.parseBoolean(args.get("UseEconomy")));
         tempPlotInfo.setCanPutOnSale(Boolean.parseBoolean(args.get("CanPutOnSale")));
         tempPlotInfo.setRefundClaimPriceOnReset(Boolean.parseBoolean(args.get("RefundClaimPriceOnReset")));

@@ -1,8 +1,8 @@
 package com.worldcretornica.plotme_core.bukkit.api;
 
-import com.worldcretornica.plotme_core.api.IBlock;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IWorld;
+import com.worldcretornica.plotme_core.utils.DoubleHelper;
 import org.bukkit.Location;
 
 public class BukkitLocation implements ILocation {
@@ -63,23 +63,28 @@ public class BukkitLocation implements ILocation {
         this.location.setZ(z);
     }
 
-    @Override
-    public IBlock getBlock() {
-        return new BukkitBlock(location.getBlock());
-    }
-
     public Location getLocation() {
         return location;
     }
 
     @Override
     public String toString() {
-        return "World: " + location.getWorld().getName().toLowerCase() + " X/Y/Z: " + getX() + "," + getY() + "," + getZ() + " Block: " + getBlock();
+        return "World: " + location.getWorld().getName().toLowerCase() + " X/Y/Z: " + getX() + "," + getY() + "," + getZ();
     }
 
     @Override
     public ILocation add(double x, double y, double z) {
         return new BukkitLocation(location.add(x, y, z));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 79 * hash + getWorld().hashCode();
+        hash = 79 * hash + DoubleHelper.hashCode(this.getX());
+        hash = 79 * hash + DoubleHelper.hashCode(this.getBlockY());
+        hash = 79 * hash + DoubleHelper.hashCode(this.getY());
+        return hash;
     }
 
     @Override

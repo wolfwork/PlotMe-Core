@@ -24,6 +24,9 @@ public class CmdDeny extends PlotCommand {
     }
 
     public boolean execute(ICommandSender sender, String[] args) {
+        if (args[1].length() > 16 || !validUserPattern.matcher(args[1]).matches()) {
+            throw new IllegalArgumentException(C("InvalidCommandInput"));
+        }
         IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.ADMIN_DENY) || player.hasPermission(PermissionNames.USER_DENY)) {
             IWorld world = player.getWorld();
@@ -52,15 +55,13 @@ public class CmdDeny extends PlotCommand {
 
                                 double price = 0.0;
 
-                                InternalPlotAddDeniedEvent event;
+                                InternalPlotAddDeniedEvent event = new InternalPlotAddDeniedEvent(world, plot, player, denied);
 
                                 if (manager.isEconomyEnabled(pmi)) {
                                     price = pmi.getDenyPlayerPrice();
                                     double balance = serverBridge.getBalance(player);
-
                                     if (balance >= price) {
-                                        event = serverBridge.getEventFactory().callPlotAddDeniedEvent(world, plot, player, denied);
-
+                                        serverBridge.getEventBus().post(event);
                                         if (event.isCancelled()) {
                                             return true;
                                         }
@@ -77,7 +78,7 @@ public class CmdDeny extends PlotCommand {
                                         return true;
                                     }
                                 } else {
-                                    event = serverBridge.getEventFactory().callPlotAddDeniedEvent(world, plot, player, denied);
+                                    serverBridge.getEventBus().post(event);
                                 }
 
                                 if (!event.isCancelled()) {

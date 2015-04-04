@@ -1,5 +1,8 @@
 package com.worldcretornica.plotme_core.bukkit;
 
+import com.worldcretornica.plotme_core.AbstractSchematicUtil;
+import com.worldcretornica.plotme_core.api.ILocation;
+import com.worldcretornica.plotme_core.bukkit.api.BukkitWorld;
 import com.worldcretornica.schematic.Attribute;
 import com.worldcretornica.schematic.Display;
 import com.worldcretornica.schematic.Ench;
@@ -241,14 +244,14 @@ public class SchematicUtil extends AbstractSchematicUtil {
     }
 
     @Override
-    public void pasteSchematic(Location loc, Schematic schem) {
+    public void pasteSchematic(ILocation loc, Schematic schem) {
         pasteSchematicBlocks(loc, schem, true);
         pasteSchematicEntities(loc, schem);
     }
 
     @SuppressWarnings("deprecation")
-    private void pasteSchematicBlocks(Location loc, Schematic schematic, boolean setBlock) {
-        World world = loc.getWorld();
+    private void pasteSchematicBlocks(ILocation loc, Schematic schematic, boolean setBlock) {
+        World world = ((BukkitWorld) loc.getWorld()).getWorld();
         int[] blocks = schematic.getBlocks();
         byte[] blockData = schematic.getData();
 
@@ -299,7 +302,7 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
     @SuppressWarnings("deprecation")
     private ItemStack getItemStack(Item item) {
-        ItemStack is = new ItemStack(item.getId(), item.getCount(), item.getDamage(), item.getDamage().byteValue());
+        ItemStack is = new ItemStack(item.getId(), item.getCount(), item.getDamage());
 
         ItemTag itemtag = item.getTag();
 
@@ -347,9 +350,10 @@ public class SchematicUtil extends AbstractSchematicUtil {
         is.setItemMeta(itemmeta);
     }
 
-    private org.bukkit.entity.Entity getLeash(Leash leash, Location loc, int originX, int originY, int originZ) {
+    private org.bukkit.entity.Entity getLeash(Leash leash, ILocation loc, int originX, int originY, int originZ) {
         org.bukkit.entity.Entity ent = null;
-        World world = loc.getWorld();
+        World world = ((BukkitWorld) loc.getWorld()).getWorld();
+
 
         int x = leash.getX() - originX;
         int y = leash.getY() - originY;
@@ -645,9 +649,9 @@ public class SchematicUtil extends AbstractSchematicUtil {
             riding = getEntity(bukkitentity.getPassenger(), minX, minY, minZ);
         }
 
-        Float falldistance = bukkitentity.getFallDistance();
-        Short fire = (short) bukkitentity.getFireTicks();
-        Integer age = bukkitentity.getTicksLived();
+        float falldistance = bukkitentity.getFallDistance();
+        short fire = (short) bukkitentity.getFireTicks();
+        int age = bukkitentity.getTicksLived();
 
         Vector velocity = bukkitentity.getVelocity();
         List<Double> motion = new ArrayList<>();
@@ -1061,7 +1065,6 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 }
 
                 byte[] blockData = getChildTag(schematic, "Data", ByteArrayTag.class, byte[].class);
-                byte[] blockBiomes = getChildTag(schematic, "Biomes", ByteArrayTag.class, byte[].class);
 
                 List<Entity> entities = null;
                 List<TileEntity> tileentities = null;
@@ -1147,7 +1150,7 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 }
 
                 schem =
-                        new Schematic(blocks, blockData, blockBiomes, materials, width, length, height, entities, tileentities, roomauthor, originx,
+                        new Schematic(blocks, blockData, materials, width, length, height, entities, tileentities, roomauthor, originx,
                                 originy, originz);
 
                 saveCompiledSchematic(schem, file.getName());
@@ -1158,24 +1161,14 @@ public class SchematicUtil extends AbstractSchematicUtil {
     }
 
     @SuppressWarnings("deprecation")
-    private void pasteSchematicEntities(Location loc, Schematic schematic) {
-        World world = loc.getWorld();
+    private void pasteSchematicEntities(ILocation loc, Schematic schematic) {
+        World world = ((BukkitWorld) loc.getWorld()).getWorld();
 
         List<Entity> entities = schematic.getEntities();
         List<TileEntity> tileentities = schematic.getTileEntities();
-        Integer originX = schematic.getOriginX();
-        Integer originY = schematic.getOriginY();
-        Integer originZ = schematic.getOriginZ();
-
-        if (originX == null) {
-            originX = 0;
-        }
-        if (originY == null) {
-            originY = 0;
-        }
-        if (originZ == null) {
-            originZ = 0;
-        }
+        int originX = schematic.getOriginX();
+        int originY = schematic.getOriginY();
+        int originZ = schematic.getOriginZ();
 
         try {
             for (Entity e : entities) {
@@ -1290,9 +1283,9 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 nb.update(true, false);
             } else if (bs instanceof Banner) {
                 Banner banner = (Banner) bs;
-                banner.setBaseColor(DyeColor.getByDyeData(te.getBase().byteValue()));
+                banner.setBaseColor(DyeColor.getByDyeData((byte) te.getBase()));
                 for (Pattern pattern : te.getPatterns()) {
-                    DyeColor dc = DyeColor.getByDyeData(pattern.getColor().byteValue());
+                    DyeColor dc = DyeColor.getByDyeData((byte) pattern.getColor());
                     PatternType pt = PatternType.getByIdentifier(pattern.getPattern());
                     org.bukkit.block.banner.Pattern pat = new org.bukkit.block.banner.Pattern(dc, pt);
                     banner.addPattern(pat);
@@ -1308,21 +1301,17 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
                     ItemStack is = getItemStack(item);
 
-                    if (item.getSlot() != null) {
-                        inventory.setItem(item.getSlot(), is);
-                    } else {
-                        inventory.addItem(is);
-                    }
+                    inventory.setItem(item.getSlot(), is);
                 }
             }
         }
     }
 
-    private org.bukkit.entity.Entity createEntity(Entity e, Location loc, int originX, int originY, int originZ) {
+    private org.bukkit.entity.Entity createEntity(Entity e, ILocation loc, int originX, int originY, int originZ) {
         try {
             @SuppressWarnings("deprecation")
             EntityType entitytype = EntityType.fromName(e.getId());
-            World world = loc.getWorld();
+            World world = ((BukkitWorld) loc.getWorld()).getWorld();
 
             org.bukkit.entity.Entity ent = null;
 
@@ -1339,57 +1328,57 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 //Byte direction = e.getDirection();
                 //Byte invulnerable = e.getInvulnerable();
                 //Byte onground = e.getOnGround();
-                Byte canpickuploot = e.getCanPickupLoot();
-                Byte color = e.getColor();
-                Byte customnamevisible = e.getCustomNameVisible();
+                byte canpickuploot = e.getCanPickupLoot();
+                byte color = e.getColor();
+                byte customnamevisible = e.getCustomNameVisible();
                 //Byte leashed = e.getLeashed();
-                Byte persistencerequired = e.getPersistenceRequired();
-                Byte sheared = e.getSheared();
-                Byte skeletontype = e.getSkeletonType();
-                Byte isbaby = e.getIsBaby();
-                Byte itemrotation = e.getItemRotation();
-                Byte agelocked = e.getAgeLocked();
-                Byte invisible = e.getInvisible();
-                Byte nobaseplate = e.getNoBasePlate();
-                Byte nogravity = e.getNoGravity();
-                Byte showarms = e.getShowArms();
+                byte persistencerequired = e.getPersistenceRequired();
+                byte sheared = e.getSheared();
+                byte skeletontype = e.getSkeletonType();
+                byte isbaby = e.getIsBaby();
+                byte itemrotation = e.getItemRotation();
+                byte agelocked = e.getAgeLocked();
+                byte invisible = e.getInvisible();
+                byte nobaseplate = e.getNoBasePlate();
+                byte nogravity = e.getNoGravity();
+                byte showarms = e.getShowArms();
                 //Byte silent = e.getSilent();
-                Byte small = e.getSmall();
-                Byte elder = e.getElder();
+                byte small = e.getSmall();
+                byte elder = e.getElder();
                 //Byte bred = e.getBred();
-                Byte chestedhorse = e.getChestedHorse();
+                byte chestedhorse = e.getChestedHorse();
                 //Byte eatinghaystack = e.getEatingHaystack();
                 //Byte hasreproduced = e.getHasReproduced();
-                Byte tame = e.getTame();
-                Byte facing = e.getFacing();
+                byte tame = e.getTame();
+                byte facing = e.getFacing();
 
                 //Double pushx = e.getPushX();
                 //Double pushz = e.getPushZ();
 
                 Entity riding = e.getRiding();
 
-                Float falldistance = e.getFallDistance();
-                //Float absorptionamount = e.getAbsorptionAmount();
-                Float healf = e.getHealF();
-                //Float itemdropchance = e.getItemDropChance();
+                float falldistance = e.getFallDistance();
+                //float absorptionamount = e.getAbsorptionAmount();
+                float healf = e.getHealF();
+                //float itemdropchance = e.getItemDropChance();
 
                 //Integer dimension = e.getDimension();
                 //Integer portalcooldown = e.getPortalCooldown();
                 //Integer tilex = e.getTileX();
                 //Integer tiley = e.getTileY();
                 //Integer tilez = e.getTileZ();
-                Integer age = e.getAge();
+                int age = e.getAge();
                 //Integer inlove = e.getInLove();
                 //Integer transfercooldown = e.getTransferCooldown();
                 //Integer tntfuse = e.getTNTFuse();
                 //Integer forcedage = e.getForcedAge();
-                Integer hurtbytimestamp = e.getHurtByTimestamp();
+                int hurtbytimestamp = e.getHurtByTimestamp();
                 //Integer morecarrotsticks = e.getMoreCarrotSticks();
-                Integer rabbittype = e.getRabbitType();
+                int rabbittype = e.getRabbitType();
                 //Integer disabledslots = e.getDisabledSlots();
-                Integer temper = e.getTemper();
-                Integer type = e.getType();
-                Integer variant = e.getVariant();
+                int temper = e.getTemper();
+                int type = e.getType();
+                int variant = e.getVariant();
 
                 Item item = e.getItem();
 
@@ -1397,8 +1386,8 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
                 Pose pose = e.getPose();
 
-                Short air = e.getAir();
-                Short fire = e.getFire();
+                short air = e.getAir();
+                short fire = e.getFire();
                 //Short attacktime = e.getAttackTime();
                 //Short deathtime = e.getDeathTime();
                 //Short health = e.getHealth();
@@ -1486,15 +1475,9 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 if (riding != null) {
                     ent.setPassenger(createEntity(riding, loc, originX, originY, originZ));
                 }
-                if (falldistance != null) {
-                    ent.setFallDistance(falldistance);
-                }
-                if (fire != null) {
-                    ent.setFireTicks(fire);
-                }
-                if (age != null && age >= 1) {
-                    ent.setTicksLived(age);
-                }
+                ent.setFallDistance(falldistance);
+                ent.setFireTicks(fire);
+                ent.setTicksLived(age);
 
                 if (motion != null && motion.size() == 3) {
                     Vector velocity = new Vector(motion.get(0), motion.get(1), motion.get(2));
@@ -1539,38 +1522,26 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 if (ent instanceof LivingEntity) {
                     LivingEntity livingentity = (LivingEntity) ent;
 
-                    if (canpickuploot != null) {
-                        livingentity.setCanPickupItems(canpickuploot != 0);
-                    }
+                    livingentity.setCanPickupItems(canpickuploot != 0);
                     if (customname != null) {
                         livingentity.setCustomName(customname);
                     }
-                    if (customnamevisible != null) {
-                        livingentity.setCustomNameVisible(customnamevisible != 0);
-                    }
+                    livingentity.setCustomNameVisible(customnamevisible != 0);
 
-                    if (air != null) {
-                        livingentity.setRemainingAir(air);
-                    }
-                    if (persistencerequired != null) {
-                        livingentity.setRemoveWhenFarAway(persistencerequired == 0);
-                    }
+                    livingentity.setRemainingAir(air);
+                    livingentity.setRemoveWhenFarAway(persistencerequired == 0);
                     if (leash != null) {
                         org.bukkit.entity.Entity leashentity = getLeash(leash, loc, originX, originY, originZ);
                         if (leashentity != null) {
                             livingentity.setLeashHolder(leashentity);
                         }
                     }
-                    if (hurtbytimestamp != null) {
-                        livingentity.setNoDamageTicks(hurtbytimestamp);
-                    }
+                    livingentity.setNoDamageTicks(hurtbytimestamp);
 
-                    if (healf != null) {
-                        if (livingentity.getMaxHealth() < healf) {
-                            livingentity.setMaxHealth(healf);
-                        }
-                        livingentity.setHealth(healf);
+                    if (livingentity.getMaxHealth() < healf) {
+                        livingentity.setMaxHealth(healf);
                     }
+                    livingentity.setHealth(healf);
 
                     EntityEquipment entityequipment = livingentity.getEquipment();
 
@@ -1592,18 +1563,12 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
                     if (livingentity instanceof Ageable) {
                         Ageable ageable = (Ageable) livingentity;
-                        if (age != null) {
-                            ageable.setAge(age);
-                        }
-                        if (agelocked != null) {
-                            ageable.setAgeLock(agelocked != 0);
-                        }
-                        if (isbaby != null) {
-                            if (isbaby != 0) {
-                                ageable.setBaby();
-                            } else {
-                                ageable.setAdult();
-                            }
+                        ageable.setAge(age);
+                        ageable.setAgeLock(agelocked != 0);
+                        if (isbaby != 0) {
+                            ageable.setBaby();
+                        } else {
+                            ageable.setAdult();
                         }
                     }
 
@@ -1612,24 +1577,22 @@ public class SchematicUtil extends AbstractSchematicUtil {
                         if (owneruuid != null) {
                             tameable.setOwner(Bukkit.getOfflinePlayer(UUID.fromString(owneruuid)));
                         }
-                        if (tame != null) {
-                            tameable.setTamed(tame != 0);
-                        }
+                        tameable.setTamed(tame != 0);
                     }
 
-                    if (livingentity instanceof Skeleton && skeletontype != null) {
+                    if (livingentity instanceof Skeleton) {
                         Skeleton skeleton = (Skeleton) livingentity;
 
                         SkeletonType st;
 
-                        if (skeletontype.equals(0)) {
+                        if (skeletontype == 0) {
                             st = SkeletonType.NORMAL;
                         } else {
                             st = SkeletonType.WITHER;
                         }
 
                         skeleton.setSkeletonType(st);
-                    } else if (livingentity instanceof Rabbit && rabbittype != null) {
+                    } else if (livingentity instanceof Rabbit) {
                         Rabbit rabbit = (Rabbit) livingentity;
 
                         switch (rabbittype) {
@@ -1657,21 +1620,11 @@ public class SchematicUtil extends AbstractSchematicUtil {
                         }
                     } else if (livingentity instanceof ArmorStand) {
                         ArmorStand armorstand = (ArmorStand) livingentity;
-                        if (showarms != null) {
-                            armorstand.setArms(showarms != 0);
-                        }
-                        if (nobaseplate != null) {
-                            armorstand.setBasePlate(nobaseplate == 0);
-                        }
-                        if (invisible != null) {
-                            armorstand.setVisible(invisible == 0);
-                        }
-                        if (nogravity != null) {
-                            armorstand.setGravity(nogravity == 0);
-                        }
-                        if (small != null) {
-                            armorstand.setSmall(small != 0);
-                        }
+                        armorstand.setArms(showarms != 0);
+                        armorstand.setBasePlate(nobaseplate == 0);
+                        armorstand.setVisible(invisible == 0);
+                        armorstand.setGravity(nogravity == 0);
+                        armorstand.setSmall(small != 0);
 
                         if (pose != null) {
                             List<Float> body = pose.getBody();
@@ -1702,20 +1655,14 @@ public class SchematicUtil extends AbstractSchematicUtil {
                         }
                     } else if (livingentity instanceof Guardian) {
                         Guardian guardian = (Guardian) livingentity;
-                        if (elder != null) {
-                            guardian.setElder(elder != 0);
-                        }
+                        guardian.setElder(elder != 0);
                     } else if (livingentity instanceof Sheep) {
                         Sheep sheep = (Sheep) livingentity;
-                        if (sheared != null) {
-                            sheep.setSheared(sheared != 0);
-                        }
-                        if (color != null) {
-                            @SuppressWarnings("deprecation")
-                            DyeColor dyecolor = DyeColor.getByWoolData(color);
-                            if (dyecolor != null) {
-                                sheep.setColor(dyecolor);
-                            }
+                        sheep.setSheared(sheared != 0);
+                        @SuppressWarnings("deprecation")
+                        DyeColor dyecolor = DyeColor.getByWoolData(color);
+                        if (dyecolor != null) {
+                            sheep.setColor(dyecolor);
                         }
                     } else if (livingentity instanceof Horse) {
                         Horse horse = (Horse) livingentity;
@@ -1728,69 +1675,61 @@ public class SchematicUtil extends AbstractSchematicUtil {
                             }
                         }
 
-                        if (chestedhorse != null) {
-                            horse.setCarryingChest(chestedhorse != 0);
-                        }
-                        if (temper != null) {
-                            horse.setDomestication(temper);
-                        }
+                        horse.setCarryingChest(chestedhorse != 0);
+                        horse.setDomestication(temper);
 
-                        if (variant != null) {
-                            switch (variant) {
-                                case 0:
-                                    horse.setVariant(Variant.HORSE);
-                                    break;
-                                case 1:
-                                    horse.setVariant(Variant.DONKEY);
-                                    break;
-                                case 2:
-                                    horse.setVariant(Variant.MULE);
-                                    break;
-                                case 3:
-                                    horse.setVariant(Variant.UNDEAD_HORSE);
-                                    break;
-                                case 4:
-                                    horse.setVariant(Variant.SKELETON_HORSE);
-                                    break;
-                            }
+                        switch (variant) {
+                            case 0:
+                                horse.setVariant(Variant.HORSE);
+                                break;
+                            case 1:
+                                horse.setVariant(Variant.DONKEY);
+                                break;
+                            case 2:
+                                horse.setVariant(Variant.MULE);
+                                break;
+                            case 3:
+                                horse.setVariant(Variant.UNDEAD_HORSE);
+                                break;
+                            case 4:
+                                horse.setVariant(Variant.SKELETON_HORSE);
+                                break;
                         }
 
-                        if (type != null) {
-                            if (type < 256) {
-                                horse.setStyle(Style.NONE);
-                            } else if (type < 512) {
-                                horse.setStyle(Style.WHITE);
-                            } else if (type < 768) {
-                                horse.setStyle(Style.WHITEFIELD);
-                            } else if (type < 1024) {
-                                horse.setStyle(Style.WHITE_DOTS);
-                            } else {
-                                horse.setStyle(Style.BLACK_DOTS);
-                            }
+                        if (type < 256) {
+                            horse.setStyle(Style.NONE);
+                        } else if (type < 512) {
+                            horse.setStyle(Style.WHITE);
+                        } else if (type < 768) {
+                            horse.setStyle(Style.WHITEFIELD);
+                        } else if (type < 1024) {
+                            horse.setStyle(Style.WHITE_DOTS);
+                        } else {
+                            horse.setStyle(Style.BLACK_DOTS);
+                        }
 
-                            switch ((int) ((double) type) % 256) {
-                                case 0:
-                                    horse.setColor(Horse.Color.WHITE);
-                                    break;
-                                case 1:
-                                    horse.setColor(Horse.Color.CREAMY);
-                                    break;
-                                case 2:
-                                    horse.setColor(Horse.Color.CHESTNUT);
-                                    break;
-                                case 3:
-                                    horse.setColor(Horse.Color.BROWN);
-                                    break;
-                                case 4:
-                                    horse.setColor(Horse.Color.BLACK);
-                                    break;
-                                case 5:
-                                    horse.setColor(Horse.Color.GRAY);
-                                    break;
-                                case 6:
-                                    horse.setColor(Horse.Color.DARK_BROWN);
-                                    break;
-                            }
+                        switch ((int) ((double) type) % 256) {
+                            case 0:
+                                horse.setColor(Horse.Color.WHITE);
+                                break;
+                            case 1:
+                                horse.setColor(Horse.Color.CREAMY);
+                                break;
+                            case 2:
+                                horse.setColor(Horse.Color.CHESTNUT);
+                                break;
+                            case 3:
+                                horse.setColor(Horse.Color.BROWN);
+                                break;
+                            case 4:
+                                horse.setColor(Horse.Color.BLACK);
+                                break;
+                            case 5:
+                                horse.setColor(Horse.Color.GRAY);
+                                break;
+                            case 6:
+                                horse.setColor(Horse.Color.DARK_BROWN);
+                                break;
                         }
                     }
                 }
@@ -1879,9 +1818,9 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
         List<Double> motion = convert(getChildTag(entity, "Motion", ListTag.class, List.class), Double.class);
         List<Double> pos = convert(getChildTag(entity, "Pos", ListTag.class, List.class), Double.class);
-        List<Float> rotation = convert(getChildTag(entity, "Rotation", ListTag.class, List.class), Float.class);
+        List<Float> rotation = convert(getChildTag(entity, "Rotation", ListTag.class, List.class), float.class);
         List<Attribute> attributes = getAttributes(entity);
-        List<Float> dropchances = convert(getChildTag(entity, "DropChances", ListTag.class, List.class), Float.class);
+        List<Float> dropchances = convert(getChildTag(entity, "DropChances", ListTag.class, List.class), float.class);
         List<Item> equipments = getEquipment(entity);
         Item itemheld = null;
         Item feetarmor = null;
@@ -1946,7 +1885,7 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
     private Pose getPose(CompoundTag poseelement) {
         Map<String, Tag> pose = poseelement.getValue();
-        List<Float> body = convert(getChildTag(pose, "body", ListTag.class, List.class), Float.class);
+        List<Float> body = convert(getChildTag(pose, "body", ListTag.class, List.class), float.class);
         List<Float> head = convert(getChildTag(pose, "head", ListTag.class, List.class), Float.class);
         List<Float> leftarm = convert(getChildTag(pose, "leftarm", ListTag.class, List.class), Float.class);
         List<Float> rightarm = convert(getChildTag(pose, "rightarm", ListTag.class, List.class), Float.class);
@@ -1983,7 +1922,7 @@ public class SchematicUtil extends AbstractSchematicUtil {
     }
 
     @SuppressWarnings("deprecation")
-    public Schematic createCompiledSchematic(Location loc1, Location loc2) {
+    public Schematic createCompiledSchematic(ILocation loc1, ILocation loc2) {
 
         Schematic schem;
 
@@ -1999,10 +1938,9 @@ public class SchematicUtil extends AbstractSchematicUtil {
             Short width = (short) (maxX - minX + 1);
             Short height = (short) (maxY - minY + 1);
 
-            World world = loc1.getWorld();
+            World world = ((BukkitWorld) loc1.getWorld()).getWorld();
             int[] blocks = new int[length * width * height];
             byte[] blockData = new byte[length * width * height];
-            byte[] biomes = null;
 
             List<Entity> entities = new ArrayList<>();
             List<TileEntity> tileentities = new ArrayList<>();
@@ -2021,30 +1959,30 @@ public class SchematicUtil extends AbstractSchematicUtil {
 
                         BlockState bs = block.getState();
 
-                        Byte rot = null;
-                        Byte skulltype = null;
-                        Byte note = null;
+                        byte rot = 0;
+                        byte skulltype = 0;
+                        byte note = 0;
 
-                        Integer record = null;
-                        Integer outputsignal = null;
-                        Integer transfercooldown = null;
-                        Integer levels = null;
-                        Integer primary = null;
-                        Integer secondary = null;
-                        Integer base = null;
+                        int record = 0;
+                        int outputsignal = 0;
+                        int transfercooldown = 0;
+                        int levels = 0;
+                        int primary = 0;
+                        int secondary = 0;
+                        int base = 0;
 
                         RecordItem recorditem = null;
 
-                        Short delay = null;
-                        Short maxnearbyentities = null;
-                        Short maxspawndelay = null;
-                        Short minspawndelay = null;
-                        Short requiredplayerrange = null;
-                        Short spawncount = null;
-                        Short spawnrange = null;
-                        Short burntime = null;
-                        Short cooktime = null;
-                        Short brewtime = null;
+                        short delay = 0;
+                        short maxnearbyentities = 0;
+                        short maxspawndelay = 0;
+                        short minspawndelay = 0;
+                        short requiredplayerrange = 0;
+                        short spawncount = 0;
+                        short spawnrange = 0;
+                        short burntime = 0;
+                        short cooktime = 0;
+                        short brewtime = 0;
 
                         String entityid = null;
                         String customname = null;
@@ -2240,7 +2178,7 @@ public class SchematicUtil extends AbstractSchematicUtil {
                 }
             }
 
-            schem = new Schematic(blocks, blockData, biomes, "Alpha", width, length, height, entities, tileentities, "", 0, 0, 0);
+            schem = new Schematic(blocks, blockData, "Alpha", width, length, height, entities, tileentities, "", 0, 0, 0);
         } else {
             schem = null;
         }

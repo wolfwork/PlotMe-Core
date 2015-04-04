@@ -22,6 +22,9 @@ public class CmdUndeny extends PlotCommand {
     }
 
     public boolean execute(ICommandSender sender, String[] args) {
+        if (args[1].length() > 16 || !validUserPattern.matcher(args[1]).matches()) {
+            throw new IllegalArgumentException(C("InvalidCommandInput"));
+        }
         IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.ADMIN_DENY) || player.hasPermission(PermissionNames.USER_DENY)) {
             IWorld world = player.getWorld();
@@ -51,7 +54,8 @@ public class CmdUndeny extends PlotCommand {
                                     double balance = serverBridge.getBalance(player);
 
                                     if (balance >= price) {
-                                        event = serverBridge.getEventFactory().callPlotRemoveDeniedEvent(world, plot, player, denied);
+                                        event = new InternalPlotRemoveDeniedEvent(world, plot, player, denied);
+                                        serverBridge.getEventBus().post(event);
 
                                         if (event.isCancelled()) {
                                             return true;
@@ -71,7 +75,9 @@ public class CmdUndeny extends PlotCommand {
                                         return true;
                                     }
                                 } else {
-                                    event = serverBridge.getEventFactory().callPlotRemoveDeniedEvent(world, plot, player, denied);
+                                    event = new InternalPlotRemoveDeniedEvent(world, plot, player, denied);
+                                    serverBridge.getEventBus().post(event);
+
                                 }
 
                                 if (!event.isCancelled()) {

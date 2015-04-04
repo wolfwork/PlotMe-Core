@@ -24,6 +24,9 @@ public class CmdSetOwner extends PlotCommand {
     }
 
     public boolean execute(ICommandSender sender, String[] args) {
+        if (args[1].length() > 16 || !validUserPattern.matcher(args[1]).matches()) {
+            throw new IllegalArgumentException(C("InvalidCommandInput"));
+        }
         IPlayer player = (IPlayer) sender;
         IWorld world = player.getWorld();
         if (player.hasPermission(PermissionNames.ADMIN_SETOWNER) && manager.isPlotWorld(world)) {
@@ -34,10 +37,6 @@ public class CmdSetOwner extends PlotCommand {
                 return true;
             }
             String newOwner = null;
-            if (args[1].length() > 16) {
-                throw new IllegalArgumentException("Player Name is too long!");
-            }
-
             //If the player by the name given is not online, stop the command from executing.
             UUID newOwnerId = null;
             for (IPlayer online : serverBridge.getOnlinePlayers()) {
@@ -58,7 +57,9 @@ public class CmdSetOwner extends PlotCommand {
 
 
                 if (!oldowner.equals(newOwnerId)) {
-                    InternalPlotOwnerChangeEvent event = serverBridge.getEventFactory().callPlotOwnerChangeEvent(world, plot, player, newOwner);
+                    InternalPlotOwnerChangeEvent event = new InternalPlotOwnerChangeEvent(world, plot, player, newOwner);
+                    serverBridge.getEventBus().post(event);
+
                     if (!event.isCancelled()) {
                         plot.setForSale(false);
                         manager.removeSellSign(world, id);
@@ -75,7 +76,8 @@ public class CmdSetOwner extends PlotCommand {
                 }
             } else {
                 InternalPlotCreateEvent event =
-                        serverBridge.getEventFactory().callPlotCreatedEvent(world, id, serverBridge.getPlayer(newOwnerId));
+                        new InternalPlotCreateEvent(world, id, serverBridge.getPlayer(newOwnerId));
+                serverBridge.getEventBus().post(event);
                 if (!event.isCancelled()) {
                     manager.createPlot(world, id, newOwner, newOwnerId, pmi);
                     player.sendMessage(C("MsgOwnerChangedTo") + " " + newOwner);

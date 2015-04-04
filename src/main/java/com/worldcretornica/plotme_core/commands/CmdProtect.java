@@ -41,7 +41,8 @@ public class CmdProtect extends PlotCommand {
                         InternalPlotProtectChangeEvent event;
 
                         if (plot.isProtected()) {
-                            event = serverBridge.getEventFactory().callPlotProtectChangeEvent(world, plot, player, false);
+                            event = new InternalPlotProtectChangeEvent(world, plot, player, false);
+                            serverBridge.getEventBus().post(event);
 
                             if (!event.isCancelled()) {
                                 plot.setProtected(false);
@@ -57,20 +58,16 @@ public class CmdProtect extends PlotCommand {
                             }
                         } else {
 
-                            double cost = 0.0;
+                            double cost = pmi.getProtectPrice();
 
                             if (manager.isEconomyEnabled(pmi)) {
-                                cost = pmi.getProtectPrice();
-
                                 if (serverBridge.getBalance(player) < cost) {
                                     player.sendMessage(C("MsgNotEnoughProtectPlot"));
                                     return true;
                                 } else {
-                                    event = serverBridge.getEventFactory().callPlotProtectChangeEvent(world, plot, player, true);
-
-                                    if (event.isCancelled()) {
-                                        return true;
-                                    } else {
+                                    event = new InternalPlotProtectChangeEvent(world, plot, player, true);
+                                    serverBridge.getEventBus().post(event);
+                                    if (!event.isCancelled()) {
                                         EconomyResponse er = serverBridge.withdrawPlayer(player, cost);
 
                                         if (!er.transactionSuccess()) {
@@ -78,11 +75,14 @@ public class CmdProtect extends PlotCommand {
                                             serverBridge.getLogger().warning(er.errorMessage);
                                             return true;
                                         }
+                                    } else {
+                                        return true;
                                     }
                                 }
 
                             } else {
-                                event = serverBridge.getEventFactory().callPlotProtectChangeEvent(world, plot, player, true);
+                                event = new InternalPlotProtectChangeEvent(world, plot, player, true);
+                                serverBridge.getEventBus().post(event);
                             }
 
                             if (!event.isCancelled()) {

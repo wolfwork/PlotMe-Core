@@ -8,7 +8,7 @@ import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
-import com.worldcretornica.plotme_core.api.event.InternalPlotAddAllowedEvent;
+import com.worldcretornica.plotme_core.api.event.InternalPlotAddTrustedEvent;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 //TODO DOES NOT WORK. CODE NEEDS TO BE MODIFIED FOR TRUST
@@ -23,6 +23,9 @@ public class CmdTrust extends PlotCommand {
     }
 
     public boolean execute(ICommandSender sender, String[] args) {
+        if (args[1].length() > 16 || !validUserPattern.matcher(args[1]).matches()) {
+            throw new IllegalArgumentException(C("InvalidCommandInput"));
+        }
         IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.ADMIN_TRUST) || player.hasPermission(PermissionNames.USER_TRUST)) {
             IWorld world = player.getWorld();
@@ -34,7 +37,7 @@ public class CmdTrust extends PlotCommand {
                     return true;
                 } else if (!manager.isPlotAvailable(id, pmi)) {
                     if (args.length < 2) {
-                        player.sendMessage(C("WordUsage") + " /plotme add <" + C("WordPlayer") + ">");
+                        player.sendMessage(getUsage());
                     } else {
                         Plot plot = manager.getPlotById(id, pmi);
 
@@ -45,34 +48,31 @@ public class CmdTrust extends PlotCommand {
                                 player.sendMessage(C("WordPlayer") + " " + trust + " " + C("MsgAlreadyAllowed"));
                             } else {
 
-                                InternalPlotAddAllowedEvent event;
+                                InternalPlotAddTrustedEvent event = new InternalPlotAddTrustedEvent(world, plot, player, trust);
+                                serverBridge.getEventBus().post(event);
+
+                                serverBridge.getEventBus().post(event);
                                 double advancedPrice = 0.0;
                                 if (manager.isEconomyEnabled(pmi)) {
                                     double price = pmi.getAddPlayerPrice();
                                     advancedPrice = price;
                                     double balance = serverBridge.getBalance(player);
 
-                                    if (balance >= price) {
-                                        event = serverBridge.getEventFactory().callPlotAddAllowedEvent(world, plot, player, trust);
-
-                                        if (!event.isCancelled()) {
-                                            EconomyResponse er = serverBridge.withdrawPlayer(player, price);
-
-                                            if (!er.transactionSuccess()) {
-                                                player.sendMessage(er.errorMessage);
-                                                serverBridge.getLogger().warning(er.errorMessage);
-                                                return true;
-                                            }
-                                        } else {
-                                            return true;
-                                        }
-                                    } else {
+                                    if (balance < price) {
                                         player.sendMessage(C("MsgNotEnoughAdd") + " " + C("WordMissing") + " " + plugin.moneyFormat(price - balance,
                                                 false));
                                         return true;
+                                    } else if (!event.isCancelled()) {
+                                        EconomyResponse er = serverBridge.withdrawPlayer(player, price);
+
+                                        if (!er.transactionSuccess()) {
+                                            player.sendMessage(er.errorMessage);
+                                            serverBridge.getLogger().warning(er.errorMessage);
+                                            return true;
+                                        }
+                                    } else {
+                                        return true;
                                     }
-                                } else {
-                                    event = serverBridge.getEventFactory().callPlotAddAllowedEvent(world, plot, player, trust);
                                 }
 
                                 if (!event.isCancelled()) {
@@ -111,7 +111,7 @@ public class CmdTrust extends PlotCommand {
 
     @Override
     public String getUsage() {
-        return C("WordUsage") + ": /plotme trust <" + C("WordPlayer") + ">";
+        return C("CmdTrustUsage");
     }
 
 }

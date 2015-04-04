@@ -7,16 +7,19 @@ import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.PlotToClear;
+import com.worldcretornica.plotme_core.api.event.InternalPlotCreateEvent;
+import com.worldcretornica.plotme_core.api.event.InternalPlotWorldLoadEvent;
+import com.worldcretornica.plotme_core.api.event.eventbus.Order;
+import com.worldcretornica.plotme_core.api.event.eventbus.Subscribe;
 import com.worldcretornica.plotme_core.bukkit.PlotMe_CorePlugin;
-import com.worldcretornica.plotme_core.bukkit.api.BukkitBlock;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitEntity;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitLocation;
 import com.worldcretornica.plotme_core.bukkit.api.BukkitPlayer;
-import com.worldcretornica.plotme_core.bukkit.event.PlotWorldLoadEvent;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -34,6 +37,7 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
@@ -66,14 +70,15 @@ public class BukkitPlotListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
         BukkitLocation location = new BukkitLocation(event.getBlock().getLocation());
 
         if (manager.isPlotWorld(location)) {
-            Player player = event.getPlayer();
+            boolean canBuild = !player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE);
             PlotId id = manager.getPlotId(location);
 
             if (id == null) {
-                if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE)) {
+                if (canBuild) {
                     player.sendMessage(api.C("ErrCannotBuild"));
                     event.setCancelled(true);
                 }
@@ -97,7 +102,7 @@ public class BukkitPlotListener implements Listener {
                     Plot plot = manager.getMap(location).getPlot(id);
 
                     if (plot == null || !plot.isAllowed(player.getUniqueId())) {
-                        if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE)) {
+                        if (canBuild) {
                             player.sendMessage(api.C("ErrCannotBuild"));
                             event.setCancelled(true);
                         }
@@ -140,7 +145,7 @@ public class BukkitPlotListener implements Listener {
                     }
                     event.setCancelled(true);
                 } else {
-                    Plot plot = manager.getPlotById(id, location.getWorld());
+                    Plot plot = manager.getMap(location).getPlot(id);
 
                     if (plot == null || !plot.isAllowed(player.getUniqueId())) {
                         if (canBuild) {
@@ -199,34 +204,36 @@ public class BukkitPlotListener implements Listener {
         Player player = event.getPlayer();
         BukkitLocation location = new BukkitLocation(event.getBlockClicked().getLocation());
 
-        if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE) && manager.isPlotWorld(location)) {
-            PlotId id = manager.getPlotId(location);
+        if (manager.isPlotWorld(location)) {
+            if (!player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE)) {
+                PlotId id = manager.getPlotId(location);
 
-            if (id == null) {
-                player.sendMessage(api.C("ErrCannotBuild"));
-                event.setCancelled(true);
-            } else {
-                PlotToClear ptc = api.getPlotLocked(location.getWorld(), id);
-
-                if (ptc != null) {
-                    switch (ptc.getReason()) {
-                        case Clear:
-                            player.sendMessage(api.C("MsgPlotLockedClear"));
-                            break;
-                        case Reset:
-                            player.sendMessage(api.C("MsgPlotLockedReset"));
-                            break;
-                        case Expired:
-                            player.sendMessage(api.C("MsgPlotLockedExpired"));
-                            break;
-                    }
+                if (id == null) {
+                    player.sendMessage(api.C("ErrCannotBuild"));
                     event.setCancelled(true);
                 } else {
-                    Plot plot = manager.getPlotById(id, location.getWorld());
+                    PlotToClear ptc = api.getPlotLocked(location.getWorld(), id);
 
-                    if (plot == null || !plot.isAllowed(player.getUniqueId())) {
-                        player.sendMessage(api.C("ErrCannotBuild"));
+                    if (ptc != null) {
+                        switch (ptc.getReason()) {
+                            case Clear:
+                                player.sendMessage(api.C("MsgPlotLockedClear"));
+                                break;
+                            case Reset:
+                                player.sendMessage(api.C("MsgPlotLockedReset"));
+                                break;
+                            case Expired:
+                                player.sendMessage(api.C("MsgPlotLockedExpired"));
+                                break;
+                        }
                         event.setCancelled(true);
+                    } else {
+                        Plot plot = manager.getPlotById(id, location.getWorld());
+
+                        if (plot == null || !plot.isAllowed(player.getUniqueId())) {
+                            player.sendMessage(api.C("ErrCannotBuild"));
+                            event.setCancelled(true);
+                        }
                     }
                 }
             }
@@ -237,16 +244,16 @@ public class BukkitPlotListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
 
-        BukkitBlock block = new BukkitBlock(event.getClickedBlock());
-        if (manager.isPlotWorld(block.getWorld())) {
+        BukkitLocation location = new BukkitLocation(event.getClickedBlock().getLocation());
+        if (manager.isPlotWorld(location)) {
             Player player = event.getPlayer();
 
-            PlotId plotId = manager.getPlotId(block.getLocation());
+            PlotId plotId = manager.getPlotId(location);
             if (plotId == null) {
                 event.setCancelled(true);
                 return;
             }
-            PlotToClear ptc = api.getPlotLocked(block.getWorld(), plotId);
+            PlotToClear ptc = api.getPlotLocked(location.getWorld(), plotId);
             if (ptc != null) {
                 switch (ptc.getReason()) {
                     case Clear:
@@ -262,7 +269,7 @@ public class BukkitPlotListener implements Listener {
                 event.setCancelled(true);
             } else {
                 boolean canBuild = !player.hasPermission(PermissionNames.ADMIN_BUILDANYWHERE);
-                PlotMapInfo pmi = manager.getMap(block.getWorld());
+                PlotMapInfo pmi = manager.getMap(location);
 
                 Plot plot = manager.getPlotById(plotId, pmi);
                 if (event.isBlockInHand() && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
@@ -276,7 +283,8 @@ public class BukkitPlotListener implements Listener {
                     }
                 } else {
                     boolean blocked = false;
-                    if (pmi.isProtectedBlock(block.getTypeId()) && !player.hasPermission("plotme.unblock." + block.getTypeId())) {
+                    if (pmi.isProtectedBlock(event.getClickedBlock().getTypeId()) && !player
+                            .hasPermission("plotme.unblock." + event.getClickedBlock().getTypeId())) {
                         blocked = true;
                     }
 
@@ -598,7 +606,6 @@ public class BukkitPlotListener implements Listener {
                     }
                 } else {
                     PlotToClear ptc = api.getPlotLocked(player.getWorld(), id);
-
                     if (ptc != null) {
                         switch (ptc.getReason()) {
                             case Clear:
@@ -755,9 +762,41 @@ public class BukkitPlotListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void onPlotWorldLoad(PlotWorldLoadEvent event) {
-        api.getLogger().info("Done loading " + event.getNbPlots() + " plots for world " + event.getWorldName());
+    @EventHandler(ignoreCancelled = true)
+    public void onSandCannon(EntityChangeBlockEvent event) {
+        BukkitEntity entity = new BukkitEntity(event.getEntity());
+        if (manager.isPlotWorld(entity) && event.getEntity().getType().equals(EntityType.FALLING_BLOCK)) {
+            //todo finish this
+        }
+    }
+
+    @Subscribe(order = Order.FIRST)
+    public void onPlotCreateFirst(InternalPlotCreateEvent event) {
+        if (api.getConfig().getBoolean("AdvancedLogging")) {
+            api.getLogger().info("First Plot Create Event");
+        }
+    }
+
+    @Subscribe(order = Order.EARLY)
+    public void onPlotCreateEarly(InternalPlotCreateEvent event) {
+        if (api.getConfig().getBoolean("AdvancedLogging")) {
+            api.getLogger().info("Early Plot Create Event");
+        }
+    }
+
+    @Subscribe(order = Order.LATE)
+    public void onPlotWorldLoad(InternalPlotCreateEvent event) {
+        if (api.getConfig().getBoolean("AdvancedLogging")) {
+            api.getLogger().info("Late Plot Create Event");
+        }
+    }
+
+    @Subscribe
+    public void onPlotWorldLoad(InternalPlotWorldLoadEvent event) {
+        if (api.getConfig().getBoolean("AdvancedLogging")) {
+            api.getLogger().info("Done loading " + event.getNbPlots() + " plots for world " + event
+                    .getWorldName());
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

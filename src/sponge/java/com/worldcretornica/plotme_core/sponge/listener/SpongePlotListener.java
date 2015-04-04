@@ -23,8 +23,8 @@ import org.spongepowered.api.event.block.FloraGrowEvent;
 import org.spongepowered.api.event.block.FluidSpreadEvent;
 import org.spongepowered.api.event.block.LeafDecayEvent;
 import org.spongepowered.api.event.entity.ProjectileLaunchEvent;
-import org.spongepowered.api.event.entity.living.player.PlayerChangeBlockEvent;
-import org.spongepowered.api.event.entity.living.player.PlayerInteractEvent;
+import org.spongepowered.api.event.entity.player.PlayerChangeBlockEvent;
+import org.spongepowered.api.event.entity.player.PlayerInteractEvent;
 import org.spongepowered.api.util.event.Subscribe;
 
 public class SpongePlotListener {
@@ -43,7 +43,7 @@ public class SpongePlotListener {
     //This event is triggered for both placing and breaking blocks.
     @Subscribe
     public void onBlockChange(PlayerChangeBlockEvent event) {
-        SpongeLocation location = new SpongeLocation(event.getBlock().getLocation());
+        SpongeLocation location = new SpongeLocation(event.getBlock());
         if (manager.isPlotWorld(location)) {
             PlotId id = manager.getPlotId(location);
             Player player = event.getPlayer();
@@ -55,13 +55,13 @@ public class SpongePlotListener {
                 if (ptc != null) {
                     switch (ptc.getReason()) {
                         case Clear:
-                            player.sendMessage(api.C("MsgPlotLockedClear"));
+                            //player.sendMessage(api.C("MsgPlotLockedClear"));
                             break;
                         case Reset:
-                            player.sendMessage(api.C("MsgPlotLockedReset"));
+                            //player.sendMessage(api.C("MsgPlotLockedReset"));
                             break;
                         case Expired:
-                            player.sendMessage(api.C("MsgPlotLockedExpired"));
+                            //player.sendMessage(api.C("MsgPlotLockedExpired"));
                             break;
                     }
                     event.setCancelled(true);
@@ -70,7 +70,7 @@ public class SpongePlotListener {
 
                     if (plot == null || !plot.isAllowed(player.getUniqueId())) {
                         if (cannotBuild) {
-                            player.sendMessage(api.C("ErrCannotBuild"));
+                            //player.sendMessage(api.C("ErrCannotBuild"));
                             event.setCancelled(true);
                         }
                     } else {
@@ -143,7 +143,7 @@ public class SpongePlotListener {
             ProjectileSource source = event.getSource().orNull();
             if (source instanceof Player) {
                 //noinspection OverlyStrongTypeCast
-                ((Player) source).sendMessage("");
+                //((Player) source).sendMessage("");
                 event.getLaunchedProjectile().remove();
             }
         }

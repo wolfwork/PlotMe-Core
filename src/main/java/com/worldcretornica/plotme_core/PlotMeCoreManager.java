@@ -2,13 +2,13 @@ package com.worldcretornica.plotme_core;
 
 import com.griefcraft.lwc.LWC;
 import com.griefcraft.model.Protection;
-import com.worldcretornica.plotme_core.api.IBlock;
 import com.worldcretornica.plotme_core.api.ICommandSender;
 import com.worldcretornica.plotme_core.api.IEntity;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IWorld;
+import com.worldcretornica.plotme_core.api.event.InternalPlotLoadEvent;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -498,8 +498,9 @@ public class PlotMeCoreManager {
         PlotMapInfo pmi = getMap(world);
 
         if (pmi != null) {
+            InternalPlotLoadEvent event = new InternalPlotLoadEvent(world, plot);
+            plugin.getServerBridge().getEventBus().post(event);
             pmi.addPlot(id, plot);
-            plugin.getServerBridge().getEventFactory().callPlotLoadedEvent(world, plot);
         }
     }
 
@@ -514,7 +515,9 @@ public class PlotMeCoreManager {
     public void addPlot(IWorld world, PlotId id, Plot plot, PlotMapInfo pmi) {
         if (pmi != null) {
             pmi.addPlot(id, plot);
-            plugin.getServerBridge().getEventFactory().callPlotLoadedEvent(world, plot);
+            InternalPlotLoadEvent event = new InternalPlotLoadEvent(world, plot);
+            plugin.getServerBridge().getEventBus().post(event);
+
         }
     }
 
@@ -558,16 +561,6 @@ public class PlotMeCoreManager {
         return isPlotWorld(entity.getWorld());
     }
 
-    /**
-     * Checks if the block is in a plotworld
-     *
-     * @param block block to get the location from
-     * @return true if world is plotworld, false otherwise
-     */
-
-    public boolean isPlotWorld(IBlock block) {
-        return isPlotWorld(block.getWorld());
-    }
     /**
      * Creates a new plot
      *
@@ -697,22 +690,12 @@ public class PlotMeCoreManager {
     public void clear(IWorld world, Plot plot, ICommandSender sender, ClearReason reason) {
         PlotId id = plot.getId();
 
-        ILocation bottom = getGenManager(world).getBottom(world, id);
-        ILocation top = getGenManager(world).getTop(world, id);
         if (reason.equals(ClearReason.Clear)) {
             adjustWall(world, plot.getId(), true);
         } else {
             adjustWall(world, plot.getId(), false);
         }
-        if (getMap(world).isUseProgressiveClear()) {
-            plugin.addPlotToClear(new PlotToClear(world, id, reason, sender));
-        } else {
-            getGenManager(world).clear(bottom, top);
-            if (plugin.getServerBridge().isUsingLwc()) {
-                removeLWC(world, id);
-            }
-            sender.sendMessage(plugin.C("MsgPlotCleared"));
-        }
+        plugin.addPlotToClear(new PlotToClear(world, id, reason, sender));
     }
 
     /**
@@ -880,12 +863,6 @@ public class PlotMeCoreManager {
      * @return location as an ILocation
      */
     public ILocation getPlotMiddle(IWorld world, PlotId id) {
-        /*ILocation bottom = getPlotBottomLoc(world, id);
-        ILocation top = getPlotTopLoc(world, id);
-        
-        ILocation middle = bottom.clone().add(top.getX() - bottom.getX(), 0, top.getZ() - bottom.getZ());
-        middle.setY(getGenManager(world).getRoadHeight(world.getName()) + 1);*/
-
         return getGenManager(world).getPlotMiddle(world, id);
     }
 
@@ -902,12 +879,6 @@ public class PlotMeCoreManager {
                         if (plot.getOwnerId().equals(uuid)) {
                             plot.setOwner(name);
                         }
-
-                        //Allowed
-                        plot.allowed().replace(name, name);
-
-                        //Denied
-                        plot.denied().replace(name, name);
                     }
                 }
             }

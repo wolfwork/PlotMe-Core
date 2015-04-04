@@ -6,10 +6,10 @@ import com.worldcretornica.plotme_core.PlotId;
 import com.worldcretornica.plotme_core.PlotMapInfo;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.ICommandSender;
+import com.worldcretornica.plotme_core.api.IOfflinePlayer;
 import com.worldcretornica.plotme_core.api.IPlayer;
 import com.worldcretornica.plotme_core.api.IWorld;
 import com.worldcretornica.plotme_core.api.event.InternalPlotCreateEvent;
-import com.worldcretornica.plotme_core.utils.UUIDFetcher;
 import net.milkbowl.vault.economy.EconomyResponse;
 
 import java.util.UUID;
@@ -35,7 +35,8 @@ public class CmdClaim extends PlotCommand {
                 if (id == null) {
                     player.sendMessage(C("MsgCannotClaimRoad"));
                     return true;
-                } else if (!manager.isPlotAvailable(id, pmi)) {
+                }
+                if (!manager.isPlotAvailable(id, pmi)) {
                     player.sendMessage(C("MsgThisPlotOwned"));
                     return true;
                 }
@@ -43,8 +44,12 @@ public class CmdClaim extends PlotCommand {
                 UUID playerUniqueId = player.getUniqueId();
 
                 if (args.length == 2 && player.hasPermission(PermissionNames.ADMIN_CLAIM_OTHER)) {
+                    if (args[1].length() > 16 || !validUserPattern2.matcher(args[1]).matches()) {
+                        throw new IllegalArgumentException(C("InvalidCommandInput"));
+                    }
+                    IOfflinePlayer offlinePlayer = serverBridge.getOfflinePlayer(args[1]);
                     playerName = args[1];
-                    playerUniqueId = UUIDFetcher.getUUIDOf(playerName);
+                    playerUniqueId = offlinePlayer.getUniqueId();
                 }
 
                 int plotLimit = getPlotLimit(player);
@@ -58,15 +63,14 @@ public class CmdClaim extends PlotCommand {
 
                     double price = 0.0;
 
-                    InternalPlotCreateEvent event;
+                    InternalPlotCreateEvent event = new InternalPlotCreateEvent(world, id, player);
 
                     if (manager.isEconomyEnabled(pmi)) {
                         price = pmi.getClaimPrice();
                         double balance = serverBridge.getBalance(player);
 
                         if (balance >= price) {
-                            event = serverBridge.getEventFactory().callPlotCreatedEvent(world, id, player);
-
+                            serverBridge.getEventBus().post(event);
                             if (event.isCancelled()) {
                                 return true;
                             }
@@ -84,7 +88,7 @@ public class CmdClaim extends PlotCommand {
                             return true;
                         }
                     } else {
-                        event = serverBridge.getEventFactory().callPlotCreatedEvent(world, id, player);
+                        serverBridge.getEventBus().post(event);
                     }
 
                     if (!event.isCancelled()) {

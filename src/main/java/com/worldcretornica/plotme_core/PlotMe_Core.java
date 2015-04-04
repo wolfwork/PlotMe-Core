@@ -1,11 +1,11 @@
 package com.worldcretornica.plotme_core;
 
+import com.google.common.eventbus.EventBus;
 import com.worldcretornica.configuration.ConfigAccessor;
 import com.worldcretornica.configuration.file.FileConfiguration;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
-import com.worldcretornica.plotme_core.bukkit.AbstractSchematicUtil;
 import com.worldcretornica.plotme_core.storage.Database;
 import com.worldcretornica.plotme_core.storage.MySQLConnector;
 import com.worldcretornica.plotme_core.storage.SQLiteConnector;
@@ -29,6 +29,7 @@ public class PlotMe_Core {
     //Caption and Config File.
     private ConfigAccessor configFile;
     private ConfigAccessor captionFile;
+    private EventBus eventBus;
 
     public PlotMe_Core(IServerBridge serverObjectBuilder, AbstractSchematicUtil schematicutil) {
         this.serverBridge = serverObjectBuilder;
@@ -53,16 +54,16 @@ public class PlotMe_Core {
     }
 
     public void enable() {
+        EventBus plotmeEventBus = new EventBus("PlotMe"); //todo work on new event system
+        setEventBus(plotmeEventBus);
         PlotMeCoreManager.getInstance().setPlugin(this);
-        configFile = new ConfigAccessor(getServerBridge().getDataFolder(), "config.yml");
-        captionFile = new ConfigAccessor(getServerBridge().getDataFolder(), "captions.yml");
+        configFile = new ConfigAccessor(PlotMe_Core.class, getServerBridge().getDataFolder(), "config.yml");
+        captionFile = new ConfigAccessor(PlotMe_Core.class, getServerBridge().getDataFolder(), "captions.yml");
         setupConfigFiles();
         serverBridge.setupCommands();
         setupSQL();
         serverBridge.setupHooks();
         serverBridge.setupListeners();
-        getSqlManager().startConnection();
-        getSqlManager().createTables();
         if (getConfig().getBoolean("coreDatabaseUpdate")) {
             getSqlManager().coreDatabaseUpdate();
         }
@@ -92,9 +93,9 @@ public class PlotMe_Core {
         // Get the config we will be working with
         FileConfiguration config = getConfig();
         // Do any config validation
-        if (config.getInt("NbClearSpools") > 50) {
-            getLogger().warning("Having more than 50 clear spools seems drastic, changing to 50");
-            config.set("NbClearSpools", 50);
+        if (config.getInt("NbClearSpools") > 20) {
+            getLogger().warning("Having more than 20 clear spools seems drastic, changing to 20");
+            config.set("NbClearSpools", 20);
         }
         //Check if the config doesn't have the worlds section. This should happen only if there is no config file for the plugin already.
         if (!config.contains("worlds")) {
@@ -130,14 +131,29 @@ public class PlotMe_Core {
      */
     private void setupSQL() {
         FileConfiguration config = getConfig();
+        boolean fileFound = false;
         if (config.getBoolean("usemySQL", false)) {
             String url = config.getString("mySQLconn");
             String user = config.getString("mySQLuname");
             String pass = config.getString("mySQLpass");
             setSqlManager(new MySQLConnector(this, url, user, pass));
+            getSqlManager().createTables();
         } else {
             setSqlManager(new SQLiteConnector(this));
             getSqlManager().createTables();
+            for (String file : getServerBridge().getDataFolder().list()) {
+                if (file.equalsIgnoreCase("plots.db")) {
+                    fileFound = true;
+                    break;
+                } else {
+                    fileFound = false;
+                }
+            }
+        }
+        getSqlManager().startConnection();
+        getSqlManager().createTables();
+        if (fileFound) {
+            getSqlManager().legacyConverter();
         }
     }
 
@@ -185,7 +201,7 @@ public class PlotMe_Core {
         plotsToClear.offer(plotToClear);
         getLogger().info("plot to clear add " + plotToClear.getPlotId());
         PlotMeSpool pms = new PlotMeSpool(this, plotToClear);
-        pms.setTaskId(serverBridge.scheduleSyncRepeatingTask(pms, 0L, 60L));
+        pms.setTaskId(serverBridge.scheduleSyncRepeatingTask(pms, 40, 60));
     }
 
     public void removePlotToClear(PlotToClear plotToClear, int taskId) {
@@ -252,4 +268,11 @@ public class PlotMe_Core {
         }
     }
 
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
+    public void setEventBus(EventBus eventBus) {
+        this.eventBus = eventBus;
+    }
 }

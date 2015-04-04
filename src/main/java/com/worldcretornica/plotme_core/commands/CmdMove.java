@@ -39,7 +39,8 @@ public class CmdMove extends PlotCommand {
                 } else {
                     PlotId id1 = new PlotId(plot1);
                     PlotId id2 = new PlotId(plot2);
-                    InternalPlotMoveEvent event = serverBridge.getEventFactory().callPlotMoveEvent(world, id1, id2, player);
+                    InternalPlotMoveEvent event = new InternalPlotMoveEvent(world, id1, id2, player);
+                    serverBridge.getEventBus().post(event);
                     if (!event.isCancelled()) {
                         if (manager.movePlot(world, id1, id2)) {
                             player.sendMessage(C("MsgPlotMovedSuccess"));

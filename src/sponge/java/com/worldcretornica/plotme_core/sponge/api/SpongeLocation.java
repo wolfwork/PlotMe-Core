@@ -1,9 +1,9 @@
 package com.worldcretornica.plotme_core.sponge.api;
 
 import com.flowpowered.math.vector.Vector3d;
-import com.worldcretornica.plotme_core.api.IBlock;
 import com.worldcretornica.plotme_core.api.ILocation;
 import com.worldcretornica.plotme_core.api.IWorld;
+import com.worldcretornica.plotme_core.utils.DoubleHelper;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -22,17 +22,17 @@ public class SpongeLocation implements ILocation {
 
     @Override
     public int getBlockX() {
-        return location.getBlock().getX();
+        return location.getBlockX();
     }
 
     @Override
     public int getBlockY() {
-        return location.getBlock().getY();
+        return location.getBlockY();
     }
 
     @Override
     public int getBlockZ() {
-        return location.getBlock().getZ();
+        return location.getBlockZ();
     }
 
     @Override
@@ -69,8 +69,8 @@ public class SpongeLocation implements ILocation {
     }
 
     @Override
-    public IBlock getBlock() {
-        return new SpongeBlockLoc(location.getBlock());
+    public String toString() {
+        return "World: " + ((World) location.getExtent()).getName() + " X/Y/Z: " + getX() + "," + getY() + "," + getZ();
     }
 
     @Override
@@ -90,4 +90,15 @@ public class SpongeLocation implements ILocation {
     public Vector3d getPosition() {
         return location.getPosition();
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 79 * hash + getWorld().hashCode();
+        hash = 79 * hash + DoubleHelper.hashCode(this.getX());
+        hash = 79 * hash + DoubleHelper.hashCode(this.getBlockY());
+        hash = 79 * hash + DoubleHelper.hashCode(this.getY());
+        return hash;
+    }
+
 }
