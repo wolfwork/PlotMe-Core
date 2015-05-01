@@ -121,9 +121,4 @@ public class MySQLConnector extends Database {
         }
     }
 
-    @Override
-    Connection legacyConnection() {
-        return getConnection();
-    }
-
 }
