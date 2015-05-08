@@ -23,7 +23,7 @@ public class SQLiteConnector extends Database {
     public Connection startConnection() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + plugin.getServerBridge().getDataFolder().getAbsolutePath() + "/plotmecore.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:" + plugin.getServerBridge().getDataFolder().getAbsolutePath() + "/plots.db");
             connection.setAutoCommit(false);
             return connection;
         } catch (ClassNotFoundException | SQLException e) {
@@ -71,7 +71,7 @@ public class SQLiteConnector extends Database {
                     + "`plot_id` INTEGER NOT NULL,"
                     + "`player` VARCHAR(50) NOT NULL"
                     + ");");
-            statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS `denied` ON plotmecore_denied(plot_id,denied)");
+            statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS `denied` ON plotmecore_denied(plot_id,player)");
             connection.commit();
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS `plotmecore_allowed` ("
                     + "`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
@@ -79,7 +79,7 @@ public class SQLiteConnector extends Database {
                     + "`player` VARCHAR(50) NOT NULL,"
                     + "`access` INTEGER NOT NULL DEFAULT '1'"
                     + ");");
-            statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS `allowed` ON plotmecore_allowed(plot_id,allowed)");
+            statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS `allowed` ON plotmecore_allowed(plot_id,player)");
             connection.commit();
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS plotmecore_likes ("
                     + "`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
@@ -91,9 +91,9 @@ public class SQLiteConnector extends Database {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS `plotmecore_metadata` ("
                     + "`id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                     + "`plot_id` INTEGER NOT NULL,"
-                    + "`pluginname` VARCHAR(100) NOT NULL,"
-                    + "`propertyname` VARCHAR(100) NOT NULL,"
-                    + "`propertyvalue` VARCHAR(255) DEFAULT NULL"
+                    + "`pluginName` VARCHAR(100) NOT NULL,"
+                    + "`propertyName` VARCHAR(100) NOT NULL,"
+                    + "`propertyValue` VARCHAR(255) DEFAULT NULL"
                     + ");");
             connection.commit();
         } catch (SQLException e) {
@@ -118,16 +118,4 @@ public class SQLiteConnector extends Database {
         }
     }
 
-    private Connection legacyConnection() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + plugin.getServerBridge().getDataFolder().getAbsolutePath() + "/plots.db");
-            connection.setAutoCommit(false);
-            return connection;
-        } catch (ClassNotFoundException | SQLException e) {
-            plugin.getLogger().severe("Could not establish a connection to the PlotMe SQLite database:");
-            plugin.getLogger().severe(e.getMessage());
-            return connection;
-        }
-    }
 }

@@ -19,7 +19,7 @@ public class CmdExpired extends PlotCommand {
         return "expired";
     }
 
-    public boolean execute(ICommandSender sender, String[] args) {
+    public boolean execute(ICommandSender sender, String[] args) throws Exception{
         IPlayer player = (IPlayer) sender;
         if (player.hasPermission(PermissionNames.ADMIN_EXPIRED)) {
             IWorld world = player.getWorld();
@@ -30,7 +30,7 @@ public class CmdExpired extends PlotCommand {
                     page = Integer.parseInt(args[1]);
                 }
 
-                List<Plot> expiredPlots = plugin.getSqlManager().getExpiredPlots(world.getName());
+                List<Plot> expiredPlots = plugin.getSqlManager().getExpiredPlots(world);
 
                 if (expiredPlots.isEmpty()) {
                     player.sendMessage(C("MsgNoPlotExpired"));

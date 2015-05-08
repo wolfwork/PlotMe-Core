@@ -96,9 +96,18 @@ public class SpongeLocation implements ILocation {
         int hash = 7;
         hash = 79 * hash + getWorld().hashCode();
         hash = 79 * hash + DoubleHelper.hashCode(this.getX());
-        hash = 79 * hash + DoubleHelper.hashCode(this.getBlockY());
         hash = 79 * hash + DoubleHelper.hashCode(this.getY());
+        hash = 79 * hash + DoubleHelper.hashCode(this.getZ());
         return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        boolean result = false;
+        if (obj instanceof ILocation) {
+            result = this.hashCode() == obj.hashCode();
+        }
+        return result;
     }
 
 }

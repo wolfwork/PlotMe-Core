@@ -2,7 +2,6 @@ package com.worldcretornica.plotme_core;
 
 import com.google.common.eventbus.EventBus;
 import com.worldcretornica.configuration.ConfigAccessor;
-import com.worldcretornica.configuration.file.FileConfiguration;
 import com.worldcretornica.plotme_core.api.IPlotMe_GeneratorManager;
 import com.worldcretornica.plotme_core.api.IServerBridge;
 import com.worldcretornica.plotme_core.api.IWorld;
@@ -10,7 +9,10 @@ import com.worldcretornica.plotme_core.storage.Database;
 import com.worldcretornica.plotme_core.storage.MySQLConnector;
 import com.worldcretornica.plotme_core.storage.SQLiteConnector;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
@@ -20,6 +22,7 @@ public class PlotMe_Core {
     //Bridge
     private final IServerBridge serverBridge;
     private final AbstractSchematicUtil schematicutil;
+    private final File pluginFolder;
     private final HashMap<String, IPlotMe_GeneratorManager> managers = new HashMap<>();
     //Spool stuff
     private final ConcurrentLinkedQueue<PlotToClear> plotsToClear = new ConcurrentLinkedQueue<>();
@@ -31,9 +34,11 @@ public class PlotMe_Core {
     private ConfigAccessor captionFile;
     private EventBus eventBus;
 
-    public PlotMe_Core(IServerBridge serverObjectBuilder, AbstractSchematicUtil schematicutil) {
+
+    public PlotMe_Core(IServerBridge serverObjectBuilder, AbstractSchematicUtil schematicutil, File pluginFolder) {
         this.serverBridge = serverObjectBuilder;
         this.schematicutil = schematicutil;
+        this.pluginFolder = pluginFolder;
     }
 
     public IPlotMe_GeneratorManager getGenManager(String name) {
@@ -57,8 +62,8 @@ public class PlotMe_Core {
         EventBus plotmeEventBus = new EventBus("PlotMe"); //todo work on new event system
         setEventBus(plotmeEventBus);
         PlotMeCoreManager.getInstance().setPlugin(this);
-        configFile = new ConfigAccessor(PlotMe_Core.class, getServerBridge().getDataFolder(), "config.yml");
-        captionFile = new ConfigAccessor(PlotMe_Core.class, getServerBridge().getDataFolder(), "captions.yml");
+        configFile = new ConfigAccessor(pluginFolder, "config.yml");
+        captionFile = new ConfigAccessor(pluginFolder, "captions.yml");
         setupConfigFiles();
         serverBridge.setupCommands();
         setupSQL();
@@ -138,6 +143,8 @@ public class PlotMe_Core {
             String pass = config.getString("mySQLpass");
             setSqlManager(new MySQLConnector(this, url, user, pass));
             getSqlManager().createTables();
+            getSqlManager().legacyConverter();
+            getConfig().set("Verison17DBUpdate", false);
         } else {
             setSqlManager(new SQLiteConnector(this));
             getSqlManager().createTables();
@@ -154,6 +161,8 @@ public class PlotMe_Core {
         getSqlManager().createTables();
         if (fileFound) {
             getSqlManager().legacyConverter();
+        } else {
+            getConfig().set("Verison17DBUpdate", false);
         }
     }
 
@@ -236,7 +245,7 @@ public class PlotMe_Core {
         this.sqlManager = sqlManager;
     }
 
-    public FileConfiguration getConfig() {
+    public YamlConfiguration getConfig() {
         return configFile.getConfig();
     }
 

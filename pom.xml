@@ -12,7 +12,8 @@
 
     <build>
         <defaultGoal>clean package install</defaultGoal>
-        <finalName>PlotMe-Core</finalName>
+        <finalName>${project.name}</finalName>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
         <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
@@ -37,7 +38,6 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.mcstats.bukkit:metrics</include>
-                                    <include>org.yaml:snakeyaml</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -158,6 +158,10 @@
                     <groupId>com.sk89q.bukkit</groupId>
                     <artifactId>bukkit-classloader-check</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -195,7 +199,12 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>1.15</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bukkit</groupId>
+            <artifactId>bukkit</artifactId>
+            <version>1.8.3-R0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
@@ -203,11 +212,16 @@
         <url>https://github.com/WorldCretornica/PlotMe-Core</url>
         <connection>scm:git:git://github.com/WorldCretornica/PlotMe-Core.git</connection>
         <developerConnection>scm:git:git@github.com:WorldCretornica/PlotMe-Core.git</developerConnection>
-        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <url>https://github.com/WorldCretornica/PlotMe-Core/issues</url>
         <system>GitHub</system>
     </issueManagement>
+
+    <ciManagement>
+        <system>jenkins</system>
+        <url>http://ci.worldcretornica.com</url>
+    </ciManagement>
+
 </project>

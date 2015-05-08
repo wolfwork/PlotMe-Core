@@ -1,5 +1,6 @@
 package com.worldcretornica.plotme_core.bukkit;
 
+import com.worldcretornica.configuration.ConfigAccessor;
 import com.worldcretornica.plotme_core.PlotMeCoreManager;
 import com.worldcretornica.plotme_core.PlotMe_Core;
 import com.worldcretornica.plotme_core.api.IEntity;
@@ -24,6 +25,8 @@ public class PlotMe_CorePlugin extends JavaPlugin {
     private final HashMap<UUID, BukkitPlayer> bukkitPlayerMap = new HashMap<>();
     private PlotMe_Core plotme;
     private IServerBridge serverObjectBuilder;
+    private ConfigAccessor configFile;
+    private ConfigAccessor captionFile;
 
     @Override
     public void onDisable() {
@@ -33,13 +36,15 @@ public class PlotMe_CorePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        serverObjectBuilder = new BukkitServerBridge(this);
+        serverObjectBuilder = new BukkitServerBridge(this, getLogger());
         if (Bukkit.getVersion().contains("1.7")) {
             getPluginLoader().disablePlugin(this);
             return;
         }
+        configFile = new ConfigAccessor(getDataFolder(), "config.yml");
+        captionFile = new ConfigAccessor(getDataFolder(), "captions.yml");
 
-        plotme = new PlotMe_Core(serverObjectBuilder, new SchematicUtil(this));
+        plotme = new PlotMe_Core(serverObjectBuilder, new SchematicUtil(this), getDataFolder());
         getAPI().enable();
         doMetric();
     }
@@ -60,16 +65,16 @@ public class PlotMe_CorePlugin extends JavaPlugin {
             Metrics metrics = new Metrics(this);
             final PlotMeCoreManager manager = PlotMeCoreManager.getInstance();
 
-            Graph graphNbWorlds = metrics.createGraph("Plot worlds");
+            Graph graphNbWorlds = metrics.createGraph("PlotWorlds");
 
-            graphNbWorlds.addPlotter(new Metrics.Plotter("Number of plot worlds") {
+            graphNbWorlds.addPlotter(new Metrics.Plotter("Number of PlotWorlds") {
                 @Override
                 public int getValue() {
                     return manager.getPlotMaps().size();
                 }
             });
 
-            graphNbWorlds.addPlotter(new Metrics.Plotter("Average Plot size") {
+            graphNbWorlds.addPlotter(new Metrics.Plotter("Average Plot Size") {
                 @Override
                 public int getValue() {
 
@@ -93,13 +98,7 @@ public class PlotMe_CorePlugin extends JavaPlugin {
             graphNbWorlds.addPlotter(new Metrics.Plotter("Number of plots") {
                 @Override
                 public int getValue() {
-                    int nbPlot = 0;
-
-                    for (String map : manager.getPlotMaps().keySet()) {
-                        nbPlot += getAPI().getSqlManager().getPlotCount(map);
-                    }
-
-                    return nbPlot;
+                    return getAPI().getSqlManager().getTotalPlotCount();
                 }
             });
 
